@@ -78,17 +78,17 @@ class IOCManager:
                                        on_update=self.all_screen_update
                                        )
         self.pv_all.set(0)
-        self.pv_pid = builder.mbbOut('pids',
-                                       ("Stop",'MINOR'),
-                                       ("Run", 0),
-                                       ("Reset",'MINOR'),
-                                       on_update=self.pid_update
-                                       )
-        self.pv_pid.set(0)
+        #self.pv_pid = builder.mbbOut('pids',
+        #                               ("Stop",'MINOR'),
+        #                               ("Run", 0),
+        #                               ("Reset",'MINOR'),
+        #                               on_update=self.pid_update
+        #                               )
+        #self.pv_pid.set(0)
 
         self.ioc_regex = re.compile(f'{device_name}')
 
-        self.pid_update(1)
+        #self.pid_update(1)
 
     def screen_update(self, i, pv):
         """

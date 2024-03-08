@@ -1,28 +1,28 @@
 # btarg device settings, YAML
 # With exception of 'general', each top level key defines a new ioc for that device
 general:
-    prefix: TGT:BTARG
+    prefix: TGT:LAB
     log_dir: 'logs'   # path of logs directory
     epics_addr_list: '129.57.86.255'
     #epics_addr_list: '127.255.255.255'
     #epics_beacon_addr_list: '127.255.255.255'
     delay: 0.5
-status:   # SoftIOC to switch between target states
-    module: 'devices.status_ioc'
-    autostart: True
-    delay: 1
-    prod_pv: False   # turn on production status PV
-thcd:   # flow controller interface
-    module: 'devices.thcd'
-    autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.180'
-    port: '101'
+pfeiffer-26x_1:
+    enable: true
+    ip: '129.57.37.103'
+    port: '1001'            # channel 3 of serial to ethernet
     timeout: 2
-    delay: 3                # update delay in seconds
-    channels:   # List of PV names for each read channel. If FI is suffix, only one PV made. Others make three: FI, FC, Mode
-        - Shield
-        - Evaporator
-        - Precool
+    delay: 1
+    indicators:
+        - Outlet_PI
+pfeiffer-26x_2:
+    enable: true
+    ip: '129.57.37.103'
+    port: '1002'            # channel 3 of serial to ethernet
+    timeout: 2
+    delay: 1
+    indicators:
+        - Inlet_PI
 lakeshore_218_1:
     module: 'devices.ls218'
     autostart: True          # Should IOC Manager try to start this?
@@ -39,150 +39,6 @@ lakeshore_218_1:
         - Shield_Plate_TI
         - Evaporator_Out_TI
         - None
-lakeshore_218_2:
-    module: 'devices.ls218'
-    autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.107'
-    port: '1003'      # channel 2 of serial to ethernet
-    timeout: 2
-    delay: 2
-    channels: # List of PV names for each read channel of 218 in order
-        - Shield_Top_TI
-        - Shield_Bottom_TI
-        - None
-        - None
-        - Reservoir_Top_TI
-        - Reservoir_Bottom_TI
-        - None
-        - None
-lakeshore_336:
-    module: 'devices.ls336'
-    autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.36'
-    port: '7777'
-    timeout: 2
-    delay: 2
-    channels: # List of channel names in order. If TI is suffix, only one PV is made; for others all PID PVS are made. None indicates an empty channel.
-        - Coolant
-        - Evaporator
-        - Coolant_B_TI
-        - Evaporator_B_TI
-omega_1:
-    module: 'devices.omega'
-    autostart: True         # Should IOC Manager try to start this?
-    ip: '192.168.1.200'
-    port: '2000'
-    timeout: 15
-    delay: 5
-    channels:
-        - Shield_Exhaust
-omega_2:
-    module: 'devices.omega'
-    autostart: True
-    ip: '192.168.1.201'
-    port: '2000'
-    timeout: 15
-    delay: 5
-    channels:
-        - Evaporator_Exhaust
-omega_3:
-    module: 'devices.omega'
-    autostart: True
-    ip: '192.168.1.202'
-    port: '2000'
-    timeout: 15
-    delay: 5
-    channels:
-        - Precool_Exhaust
-dat8017_i1:
-    module: 'devices.dat8017'
-    autostart: False
-    ip: '192.168.1.149'
-    port: '502'
-    timeout: 2
-    delay: 2
-    channels:  # Dict of PV names for each read channel of datexel in order, values are calibration factors
-        Target_Supply_PI: 1
-        Target_Return_PI: 1
-        Shield_Exhaust_PI: 1
-        Precool_Exhaust_PI: 1
-        Evap_Exhaust_PI: 1
-dat8017_i2:
-    module: 'devices.dat8017'
-    autostart: False
-    ip: '192.168.1.150'
-    port: '502'
-    timeout: 2
-    delay: 2
-    channels:  # Dict of PV names for each read channel of datexel in order, values are calibration factors
-        H2_Tank_PI: 1
-        D2_Tank_PI: 1
-        4He_Tank_PI: 1
-        3He_Tank_PI: 1
-dat8017_v:
-    module: 'devices.dat8017'
-    autostart: False
-    ip: '192.168.1.151'
-    port: '502'
-    timeout: 2
-    delay: 2
-    channels: # Dict of PV names for each read channel of datexel in order, values are calibration factors
-        #Bot_PI: 1
-dat8148:
-    module: 'devices.dat8148'
-    autostart: False
-    ip: '192.168.1.152'
-    port: '502'
-    timeout: 2
-    delay: 2
-    channels: # Dict of PV names for each read channel of datexel in order
-        - Vacuum_Sw_SP_Fault_DI    # DI: Digital In
-        - Gate_Bypass_Sw_On_DI
-        - Vacuum_Sw_Fault_DI
-        - Vacuum_Sw_Good_DI
-        - None
-        - None
-        - None
-        - None
-        - Vent_Purge_Fault_DI
-        - Vent_Purge_Good_DI
-dat8130:
-    module: 'devices.dat8130'
-    autostart: False
-    ip: '192.168.1.153'
-    port: '502'
-    timeout: 2
-    delay: 2
-    channels: # Dict of PV names for each channel. Needs 4 OUT channels first (None to mark unused), then up to 8 IN.
-        - FlipFlop_DO    # DO: Digital OUT
-        - Gate_DO
-        - Other_DO      # "None" if DO not used
-        - None
-        - Exhaust_to_Vent_DI   # DI: Digital IN
-        - Exhaust_to_Warm_DI
-        - Gate_Closed_DI
-        - Gate_Open_DI
-        - Other_Closed_DI
-        - Other_Open_DI
-mks937b:
-    module: 'devices.mks937b'
-    autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.107'
-    port: '1001'            # channel 3 of serial to ethernet
-    address: '003'          # serial address set on device
-    timeout: 2
-    delay: 2
-    channels:
-        - Some_PI
-ami136:
-    module: 'devices.ami136'
-    autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.107'
-    port: '1004'
-    timeout: 1
-    delay: 5
-    channels:
-        - Reservoir_LI
 rigol_dp832:
     module: 'devices.dp832'
     autostart: True          # Should IOC Manager try to start this?
@@ -194,22 +50,4 @@ rigol_dp832:
     channels: # List of channel names in order. None indicates unused channel.
         - Reservoir_Heater
         - Shield_Heater
-zaber:
-    module: 'devices.zaber_motor'
-    autostart: True
-    ip: '192.168.1.40'
-    port: '55551'
-    timeout: 1
-    delay: 5
-    channels:   # list of "axes" in order. None indicates unused channel.
-        - Shutoff
-        - None
-        - Flag
-    locations:    # dict of preset locations (name then degrees from home) defaults for each channel
-        Shutoff:
-            Closed: 0
-            Open: 1440
-        Flag:
-            Left: 15
-            Empty: 30
-            Right: 45
+
