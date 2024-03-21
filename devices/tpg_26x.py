@@ -85,30 +85,14 @@ class DeviceConnection():
             print(f"TPG connection failed on {self.host}: {e}")
             
         #self.read_regex = re.compile('([+-]\d+.\d+)')
-        self.read_regex = re.compile(b'.+,(\d+.\d+),.+,.+\r\n')
+        self.read_regex = re.compile(b'\d,(.+),.+,(.+)\r')
          
     def read_all(self):
-        '''Read all channels. Returns list of 4 readings.'''
-        #enq = "\05"
+        '''Read all channels, return as list'''
         try:
-        #    self.tn.write(b"PRX {enq}\r\n")
-        #    i, match, data = self.tn.expect([b"\r\n"], timeout = 2)   # read until ok response
-        #    out = data.decode('ascii')
-        ###    self.tn.write(b"{enq}")
-        #    i, match, data = self.tn.expect([b"\r\n"], timeout = 2)   # read until ok response
-        #    out = data.decode('ascii')
-        #    print(data)
-        #    self.tn.write(b"{enq}")
-        #    i, match, data = self.tn.expect([b"\r\n"], timeout = 2)   # read until ok response
-        #    out = data.decode('ascii')
-        #    print(data)
-        #    #m = self.read_regex.search(out)
-            #values  = [float(x) for x in m.groups()]
-        #    return data
-
-            #data = self.tn.read_until(b"self.read_regex", timeout=2).decode('ascii')
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
-            return data
+            print(data)
+            return [float(x) for x in match.groups()]
 
         except Exception as e:
             print(f"TPG26x read failed on {self.host}: {e}")
