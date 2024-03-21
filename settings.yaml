@@ -8,21 +8,33 @@ general:
     #epics_beacon_addr_list: '127.255.255.255'
     delay: 0.5
 pfeiffer-26x_1:
-    enable: true
+    module: 'devices.tpg_26x'
+    autostart: True
     ip: '129.57.37.103'
-    port: '1001'            # channel 3 of serial to ethernet
+    port: '1001'            # channel 1 of serial to ethernet
     timeout: 2
-    delay: 1
-    indicators:
+    delay: 2
+    channels:
         - Outlet_PI
 pfeiffer-26x_2:
-    enable: true
+    module: 'devices.tpg_26x'
+    autostart: True
     ip: '129.57.37.103'
-    port: '1002'            # channel 3 of serial to ethernet
+    port: '1002'            # channel 2 of serial to ethernet
     timeout: 2
-    delay: 1
-    indicators:
+    delay: 2
+    channels:
         - Inlet_PI
+si9700:
+    module: 'devices.si9700'
+    autostart: True
+    ip: '129.57.37.103'
+    port: '1003'            # channel 3 of serial to ethernet
+    timeout: 10
+    delay: 10
+    channels:
+        - Liquifier_TI
+        - None
 lakeshore_218_1:
     module: 'devices.ls218'
     autostart: True          # Should IOC Manager try to start this?

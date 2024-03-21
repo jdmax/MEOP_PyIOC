@@ -5,7 +5,7 @@ from softioc import builder, alarm
 
 
 class Device():
-    '''Makes library of PVs needed for Pfeiffer TPG 261 and 262 and provides methods connect them to the device
+    '''Makes library of PVs needed for Scientific Instruments 9700 and provides methods connect them to the device
 
     Attributes:
         pvs: dict of Process Variables keyed by name
@@ -37,16 +37,16 @@ class Device():
         self.connect()
 
     def do_sets(self, new_value, pv):
-        """Has no sets"""
+        """SI9700 has no sets"""
         pass
 
     async def do_reads(self):
         '''Match variables to methods in device driver and get reads from device'''
         try:
-            vals = self.t.read_all()
+            temps = self.t.read_all()
             for i, channel in enumerate(self.channels):
                 if "None" in channel: continue
-                self.pvs[channel].set(vals[i])
+                self.pvs[channel].set(temps[i])
                 self.remove_alarm(channel)
         except OSError:
             for i, channel in enumerate(self.channels):
@@ -82,18 +82,20 @@ class DeviceConnection():
         try:
             self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)                  
         except Exception as e:
-            print(f"TPG connection failed on {self.host}: {e}")
+            print(f"SI9700 connection failed on {self.host}: {e}")
             
-        #self.read_regex = re.compile('([+-]\d+.\d+)')
-        self.read_regex = re.compile(b'\d,(.+),.+,(.+)\r')
+        self.read_regex = re.compile(b'TALL\s(\d+.\d{4}),(\d+.\d{4})')
          
     def read_all(self):
-        '''Read all channels, return as list'''
-        try:
+        '''Read temperatures for all channels.'''
+        values = []
+        try: 
+            self.tn.write(bytes(f"TALL?\r",'ascii'))     # 0 means it will return all channels
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
-            #print(data)
+            print(data)
             return [float(x) for x in match.groups()]
-
+            
         except Exception as e:
-            print(f"TPG26x read failed on {self.host}: {e}")
-
+            print(f"SI9700 read failed on {self.host}: {e}")
+            raise OSError('SI9700 read')
+        
