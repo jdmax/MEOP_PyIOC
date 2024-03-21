@@ -15,3 +15,11 @@ Inlet_PI:
     HIGH: 1200
     LOW: -100
     LOLO: -150
+Liquifier_TI:
+    DESC: 'Temperature from Liquifier Controller'
+    PREC: 2
+    EGU: 'K'
+    HIHI: 310
+    HIGH: 300
+    LOW: 2
+    LOLO: 1

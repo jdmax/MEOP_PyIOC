@@ -3,8 +3,8 @@
 general:
     prefix: TGT:LAB
     log_dir: 'logs'   # path of logs directory
-    epics_addr_list: '129.57.86.255'
-    #epics_addr_list: '127.255.255.255'
+    #epics_addr_list: '129.57.86.255'  # In Hall B
+    epics_addr_list: '127.255.255.255'  # On experimental equipment network
     #epics_beacon_addr_list: '127.255.255.255'
     delay: 0.5
 pfeiffer-26x_1:
@@ -13,7 +13,7 @@ pfeiffer-26x_1:
     ip: '129.57.37.103'
     port: '1001'            # channel 1 of serial to ethernet
     timeout: 2
-    delay: 2
+    delay: 5
     channels:
         - Outlet_PI
 pfeiffer-26x_2:
@@ -22,7 +22,7 @@ pfeiffer-26x_2:
     ip: '129.57.37.103'
     port: '1002'            # channel 2 of serial to ethernet
     timeout: 2
-    delay: 2
+    delay: 5
     channels:
         - Inlet_PI
 si9700:
@@ -30,8 +30,8 @@ si9700:
     autostart: True
     ip: '129.57.37.103'
     port: '1003'            # channel 3 of serial to ethernet
-    timeout: 10
-    delay: 10
+    timeout: 2
+    delay: 5
     channels:
         - Liquifier_TI
         - None
