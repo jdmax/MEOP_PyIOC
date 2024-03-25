@@ -124,97 +124,132 @@ class DeviceConnection():
         try:
             self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)
         except Exception as e:
-            print(f"DP832 connection failed on {self.host}: {e}")
+            print(f"CS-4 connection failed on {self.host}: {e}")
 
-        self.read_regex = re.compile('CH\d:\d+V/\dA,(\d+.\d+),(\d+.\d+)')
-        self.read_sp_regex = re.compile('(\d+.\d+),(\d+.\d+),(\d+.\d+)')
+        self.current_regex = re.compile(b'(\d+.\d+)\sA')
+        self.voltage_regex = re.compile(b'(-?\d+.\d+)\sV')
+        self.on_off_regex = re.compile(b'(0|1)')
+        self.sweep_regex = re.compile(b'SWEEP\?\r\n(.+)\r\n')
 
-    def read_current(self, channel):
-        '''Read current.'''
+    def read_current(self):
+        '''Read magnet current.'''
         try:
-            command = f":IMAG?\n"
+            command = f"IMAG?\n"
             self.tn.write(bytes(command, 'ascii'))   # Reading
-            data = self.tn.read_until(b'\n', timeout=self.timeout).decode('ascii')  # read until carriage return
-            m = self.read_regex.search(data)
-            values = [float(x) for x in m.groups()]
-            return values   # return voltage, current as list
-
+            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            return float(match.groups()[0])
         except Exception as e:
-            print(f"DP832 read sp failed on {self.host}: {e},{command},{data}")
-            raise OSError('DP832 read sp')
+            print(f"CS-4 read current failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-    def read(self, channel):
-        '''Read voltage, current measured for given channel (1,2,3).'''
+    def read_out(self):
+        '''Read power supply current.'''
         try:
-            command = f":MEASURE:ALL? CH{channel}\n"
+            command = f"IOUT?\n"
             self.tn.write(bytes(command, 'ascii'))   # Reading
-            data = self.tn.read_until(b'\n', timeout=self.timeout).decode('ascii')  # read until carriage return
-            m = self.read_sp_regex.search(data)
-            values = [float(x) for x in m.groups()]
-            return values   # return voltage, current as list
-
+            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            return float(match.groups()[0])
         except Exception as e:
-            print(f"DP832 read failed on {self.host}: {e}, {command},{data}")
-            raise OSError('DP832 read')
+            print(f"CS-4 read out failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-    def set(self, channel, voltage, current):
-        '''Set current and voltage for given channel'''
+    def read_voltage(self):
+        '''Read magnet voltage.'''
         try:
-            self.tn.write(bytes(f":APPLY CH{channel},{voltage},{current}\n", 'ascii'))
-            time.sleep(0.2)
-            return self.read_sp(channel)   # return voltage, current as list
-
+            command = f"VMAG?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.voltage_regex], timeout=self.timeout)
+            return float(match.groups()[0])
         except Exception as e:
-            print(f"DP832 set failed on {self.host}: {e}")
-            raise OSError('DP832 set')
+            print(f"CS-4 read volt failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-    def read_state(self, channel):
-        '''Read output state for given channel.
-        Arguments:
-            channel: out put channel (1 to 4)
-        '''
+    def read_ulim(self):
+        '''Read upper limit.'''
         try:
-            self.tn.write(bytes(f"OUTPUT? CH{channel}\n", 'ascii'))
-            data = self.tn.read_until(b'\n', timeout=self.timeout).decode('ascii')  # read until carriage return
-            state = True if 'ON' in data else False
-            return state
-
+            command = f"ULIM?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            return float(match.groups()[0])
         except Exception as e:
-            print(f"DP832 outmode read failed on {self.host}: {e}")
-            raise OSError('DP832 outmode read')
+            print(f"CS-4 read ulim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-    def set_state(self, channel, state):
-        '''Setup output state on (true) or off (false).
-        Arguments:
-            channel: out put channel (1 to 4)
-            state: False=Off, True=On
-        '''
-        out = 'ON' if state else 'OFF'
+    def read_llim(self):
+        '''Read lower limit.'''
         try:
-            self.tn.write(bytes(f":OUTPUT CH{channel},{out}\n", 'ascii'))
-            time.sleep(0.2)
-            return self.read_state(channel)
+            command = f"LLIM?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            return float(match.groups()[0])
         except Exception as e:
-            print(f"DP832 out set failed on {self.host}: {e}")
-            raise OSError('DP832 out set')
+            print(f"CS-4 read llim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-        self.status.update({'current': {'value': '0', 'query': "IMAG?", 'text': 'Magnet Current (A)'}})
-        self.status.update({'ps_current': {'value': '0', 'query': "IOUT?", 'text': 'Power Supply Current (A)'}})
-        self.status.update({'v_mag': {'value': '0', 'query': "VMAG?", 'text': 'Voltage (V)'}})
-        self.status.update({'up_lim': {'value': '0', 'query': "ULIM?", 'text': 'Upper Limit (A)'}})
-        self.status.update({'low_lim': {'value': '0', 'query': "LLIM?", 'text': 'Lower Limit (A)'}})
-        self.status.update({'sweep': {'value': '0', 'query': "SWEEP?", 'text': 'Sweep Status'}})
-        self.status.update({'switch': {'value': '0', 'query': "PSHTR?", 'text': 'Switch Heater Status'}})
-        # self.status.update({ 'id' :         { 'value' : '0', 'query' : "*IDN?",     'text' : 'Device ID'}})
+    def read_heater(self):
+        '''Read heater status.'''
+        try:
+            command = f"PSHTR?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.on_off_regex], timeout=self.timeout)
+            if b'1' in match.groups()[0]:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"CS-4 read heater failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
-        self.commands = {  # command strings
-            'low_lim': "LLIM ",
-            'up_lim': "ULIM ",
-            'ps_on': "PSHTR ON",
-            'ps_off': "PSHTR OFF",
-            'sw_up': "SWEEP UP",
-            'sw_down': "SWEEP DOWN",
-            'sw_pause': "SWEEP PAUSE",
-            'sw_zero': "SWEEP ZERO",
-            'complete': "OPC?"
-        }
+    def read_sweep(self):
+        '''Read sweep status. Returns index of status list [up, down, paused, zero] and fast status (True or False).'''
+        try:
+            command = f"SWEEP?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.sweep_regex], timeout=self.timeout)
+            stat = match.groups()[0]
+            fast = True if b'fast' in stat else False
+            if b'sweep up' in stat:
+                return 0, fast
+            elif b'sweep down' in stat:
+                return 1, fast
+            elif b'sweep paused' in stat:
+                return 2, fast
+            elif b'zeroing' in stat:
+                return 3, fast
+
+        except Exception as e:
+            print(f"CS-4 read status failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read sweep')
+
+    def set_ulim(self):
+        '''Set upper limit. NOT DONE'''
+        try:
+            command = f"ULIM\n"
+            self.tn.write(bytes(command, 'ascii'))
+            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            return float(match.groups()[0])
+        except Exception as e:
+            print(f"CS-4 read ulim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
+
+
+        # self.status.update({'current': {'value': '0', 'query': "IMAG?", 'text': 'Magnet Current (A)'}})
+        # self.status.update({'ps_current': {'value': '0', 'query': "IOUT?", 'text': 'Power Supply Current (A)'}})
+        # self.status.update({'v_mag': {'value': '0', 'query': "VMAG?", 'text': 'Voltage (V)'}})
+        # self.status.update({'up_lim': {'value': '0', 'query': "ULIM?", 'text': 'Upper Limit (A)'}})
+        # self.status.update({'low_lim': {'value': '0', 'query': "LLIM?", 'text': 'Lower Limit (A)'}})
+        # self.status.update({'sweep': {'value': '0', 'query': "SWEEP?", 'text': 'Sweep Status'}})
+        # self.status.update({'switch': {'value': '0', 'query': "PSHTR?", 'text': 'Switch Heater Status'}})
+        # # self.status.update({ 'id' :         { 'value' : '0', 'query' : "*IDN?",     'text' : 'Device ID'}})
+        #
+        # self.commands = {  # command strings
+        #     'low_lim': "LLIM ",
+        #     'up_lim': "ULIM ",
+        #     'ps_on': "PSHTR ON",
+        #     'ps_off': "PSHTR OFF",
+        #     'sw_up': "SWEEP UP",
+        #     'sw_down': "SWEEP DOWN",
+        #     'sw_pause': "SWEEP PAUSE",
+        #     'sw_zero': "SWEEP ZERO",
+        #     'complete': "OPC?"
+        # }
