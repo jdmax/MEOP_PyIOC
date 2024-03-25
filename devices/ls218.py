@@ -90,8 +90,9 @@ class DeviceConnection():
         '''Read temperatures for all channels.'''  
         values = []
         try: 
-            self.tn.write(bytes(f"SRDG? 0\n",'ascii'))     # 0 means it will return all channels
+            self.tn.write(bytes(f"KRDG? 0\n",'ascii'))     # 0 means it will return all channels
             data = self.tn.read_until(b'\n', timeout = 2).decode('ascii')   # read until carriage return
+            print(data)
             ms = self.read_regex.findall(data)
             for m in ms:
                 values.append(float(m))

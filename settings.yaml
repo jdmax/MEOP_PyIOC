@@ -43,12 +43,12 @@ lakeshore_218_1:
     timeout: 2
     delay: 2
     channels:   # List of PV names for each read channel of 218 in order
-        - OVC_TI
-        - Shield_TI
         - Reservoir_TI
         - None
         - None
         - None
+        - OVC_TI
+        - Shield_TI
         - None
         - None
 rigol_dp832:
