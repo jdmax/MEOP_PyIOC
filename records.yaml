@@ -23,3 +23,27 @@ Liquifier_TI:
     HIGH: 300
     LOW: 2
     LOLO: 1
+Reservoir_TI:
+    DESC: 'Temperature of Magnet Reservoir'
+    PREC: 2
+    EGU: 'K'
+    HIHI: 310
+    HIGH: 300
+    LOW: 2
+    LOLO: 1
+Shield_TI:
+    DESC: 'Temperature of Magnet Shield'
+    PREC: 2
+    EGU: 'K'
+    HIHI: 310
+    HIGH: 300
+    LOW: 2
+    LOLO: 1
+OVC_TI:
+    DESC: 'Temperature of Magnet OVC'
+    PREC: 2
+    EGU: 'K'
+    HIHI: 310
+    HIGH: 300
+    LOW: 2
+    LOLO: 1

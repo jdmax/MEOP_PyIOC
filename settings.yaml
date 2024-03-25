@@ -35,13 +35,13 @@ si9700:
     channels:
         - Liquifier_TI
         - None
-lakeshore_218_1:
+lakeshore_218:
     module: 'devices.ls218'
     autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.111'
+    ip: '129.57.37.111'
     port: '1002'    # channel 1 of serial to ethernet
     timeout: 2
-    delay: 2
+    delay: 5
     channels:   # List of PV names for each read channel of 218 in order
         - Reservoir_TI
         - None
