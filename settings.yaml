@@ -38,18 +38,18 @@ si9700:
 lakeshore_218_1:
     module: 'devices.ls218'
     autostart: True          # Should IOC Manager try to start this?
-    ip: '192.168.1.107'
+    ip: '192.168.1.111'
     port: '1002'    # channel 1 of serial to ethernet
     timeout: 2
     delay: 2
     channels:   # List of PV names for each read channel of 218 in order
-        - Cell_TI
-        - Condenser_TI
+        - OVC_TI
+        - Shield_TI
+        - Reservoir_TI
         - None
         - None
-        - Shield_DS_TI
-        - Shield_Plate_TI
-        - Evaporator_Out_TI
+        - None
+        - None
         - None
 rigol_dp832:
     module: 'devices.dp832'
