@@ -1,16 +1,14 @@
-# J. Maxwell 2023
-import telnetlib
-import re
+from pyModbusTCP.client import ModbusClient
 from softioc import builder, alarm
 
-
 class Device():
-    '''Makes library of PVs needed for Pfeiffer TPG 261 and 262 and provides methods connect them to the device
+    """Makes library of PVs needed for DAT8018 TC Reader and provides methods connect them to the device
 
     Attributes:
         pvs: dict of Process Variables keyed by name
         channels: channels of device
-    '''
+    """
+
     def __init__(self, device_name, settings):
         '''Make PVs needed for this device and put in pvs dict keyed by name
         '''
@@ -18,46 +16,53 @@ class Device():
         self.settings = settings
         self.channels = settings['channels']
         self.pvs = {}
+        self.new_reads = {}
+        self.calibs = {}
         sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
 
-        for channel in settings['channels']:  # set up PVs for each channel
+        for channel in settings['channels']:  # set up PVs for each channel, calibrations are values of dict
             if "None" in channel: continue
             self.pvs[channel] = builder.aIn(channel, **sevr)
+            self.calibs[channel] = settings['calibration'][channel]
 
-    def connect(self):
+    async def connect(self):
         '''Open connection to device'''
         try:
             self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
         except Exception as e:
             print(f"Failed connection on {self.settings['ip']}, {e}")
 
-    def reconnect(self):
+    async def reconnect(self):
+        '''Delete connection and try again'''
         del self.t
         print("Connection failed. Attempting reconnect.")
-        self.connect()
+        await self.connect()
 
     def do_sets(self, new_value, pv):
-        """Has no sets"""
+        """8018 has no sets"""
         pass
 
     async def do_reads(self):
         '''Match variables to methods in device driver and get reads from device'''
         try:
-            vals = self.t.read_all()
+            readings = self.t.read_all()
             for i, channel in enumerate(self.channels):
                 if "None" in channel: continue
-                self.pvs[channel].set(vals[i])
+                if isinstance(self.calibs[channel], int):   # do conversion from 4-20 mA to psi using max range calib
+                    p = (readings[i]/1000)*(self.calibs[channel]/16) - 25
+                    self.pvs[channel].set(p)
+                else:
+                    self.pvs[channel].set(readings[i])
                 self.remove_alarm(channel)
-        except OSError:
+        except OSError as e:
+            print(e)
             for i, channel in enumerate(self.channels):
                 if "None" in channel: continue
                 self.set_alarm(channel)
-            self.reconnect()
-        except TypeError:
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.set_alarm(channel)
-            self.reconnect()
+            await self.reconnect()
+        except TypeError as e:
+            print(e)
+            await self.reconnect()
         else:
             return True
 
@@ -69,12 +74,12 @@ class Device():
         """Remove alarm and severity for channel"""
         self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
 
-
 class DeviceConnection():
-    '''Handle connection to Lakeshore Model 218 via serial over ethernet. 
+    '''Handle connection to Datexel 8018.
     '''
-    def __init__(self, host, port, timeout):        
-        '''Open connection to Lakeshore 218
+
+    def __init__(self, host, port, timeout):
+        '''Open connection to DAT8018
         Arguments:
             host: IP address
             port: Port of device
@@ -83,22 +88,18 @@ class DeviceConnection():
         self.host = host
         self.port = port
         self.timeout = timeout
-        
+
         try:
-            self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)                  
+            self.m =  ModbusClient(host=self.host, port=int(self.port), unit_id=1, auto_open=True)
         except Exception as e:
-            print(f"TPG connection failed on {self.host}: {e}")
-            
-        #self.read_regex = re.compile('([+-]\d+.\d+)')
-        self.read_regex = re.compile(b'\d,(.+),.+,(.+)\r')
-         
+            print(f"Datexel 8018 connection failed on {self.host}: {e}")
+
     def read_all(self):
-        '''Read all channels, return as list'''
+        '''Read all channels.'''
         try:
-            i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
-            #print(data)
-            return [float(x) for x in match.groups()]
+            values = self.m.read_input_registers(40,8)  # read all 8 channels starting at 40
+            return values
 
         except Exception as e:
-            print(f"TPG26x read failed on {self.host}: {e}")
-
+            print(f"Datexel 8018 read failed on {self.host}: {e}")
+            raise OSError('8018 read')
