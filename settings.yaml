@@ -62,4 +62,28 @@ rigol_dp832:
     channels: # List of channel names in order. None indicates unused channel.
         - Reservoir_Heater
         - Shield_Heater
-
+dat8018:
+    module: 'devices.dat8018'
+    autostart: True          # Should IOC Manager try to start this?
+    ip: '129.57.37.116'
+    port: '502'
+    timeout: 2
+    delay: 5
+    channels: # List of channel names in order. None indicates unused channel.
+        - One_TI
+        - Two_TI
+        - Three_TI
+        - Four_TI
+        - Five_TI
+        - Six_TI
+        - None
+        - None
+lm_500:
+    module: 'devices.lm500'
+    autostart: True          # Should IOC Manager try to start this?
+    ip: '129.57.37.111'
+    port: '1003'    # channel 1 of serial to ethernet
+    timeout: 2
+    delay: 5
+    channels:
+        - Magnet_LI

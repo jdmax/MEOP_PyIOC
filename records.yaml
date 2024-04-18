@@ -47,3 +47,51 @@ OVC_TI:
     HIGH: 300
     LOW: 2
     LOLO: 1
+One_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Two_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Three_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Four_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Five_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Six_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
