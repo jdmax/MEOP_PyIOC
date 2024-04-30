@@ -130,6 +130,11 @@ class DeviceConnection():
         self.voltage_regex = re.compile(b'(-?\d+.\d+)\sV')
         self.on_off_regex = re.compile(b'(0|1)')
         self.sweep_regex = re.compile(b'SWEEP\?\r\n(.+)\r\n')
+        self.status_regex = re.compile(b'PSHTR\?;VMAG\?;IMAG\?;IOUT\?\r\n(\d);(-?\d+\.\d+) V;(-?\d+\.\d+) A;(-?\d+\.\d+) A\r\n')
+
+        self.units_regex = re.compile(b'UNITS\s(\w*)\r\n')
+        self.ulim_regex = re.compile(b'ULIM\s(\d+\.\d*)\r\n')
+        self.llim_regex = re.compile(b'LLIM\s(\d+\.\d*)\r\n')
 
     def read_current(self):
         '''Read magnet current.'''
@@ -221,16 +226,51 @@ class DeviceConnection():
             print(f"CS-4 read status failed on {self.host}: {e},{command},{data}")
             raise OSError('CS-4 read sweep')
 
-    def set_ulim(self):
-        '''Set upper limit. NOT DONE'''
+    def read_status(self):
+        '''Read status of several parameters at once.'''
         try:
-            command = f"ULIM\n"
+            command = f"PSHTR?;VMAG?;IMAG?;IOUT?\n"
+            self.tn.write(bytes(command, 'ascii'))   # Reading
+            i, match, data = self.tn.expect([self.status_regex], timeout=self.timeout)
+            heat, voltage, magnet, out = match.groups()
+            heater = True if b'1' in heat else False
+            return heater, float(voltage), float(magnet), float(out)
+        except Exception as e:
+            print(f"CS-4 read statuses failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read status')
+
+    def set_units(self, value):
+        '''Set units. Usually use A. Options are A, T, G or kG.'''
+        try:
+            command = f"UNITS {value}\n"
             self.tn.write(bytes(command, 'ascii'))
-            i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
+            i, match, data = self.tn.expect([self.units_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 read ulim failed on {self.host}: {e},{command},{data}")
-            raise OSError('CS-4 read')
+            print(f"CS-4 set ulim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 set')
+
+    def set_ulim(self, value):
+        '''Set upper limit.'''
+        try:
+            command = f"ULIM {value}\n"
+            self.tn.write(bytes(command, 'ascii'))
+            i, match, data = self.tn.expect([self.ulim_regex], timeout=self.timeout)
+            return float(match.groups()[0])
+        except Exception as e:
+            print(f"CS-4 set ulim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 ulim set')
+
+    def set_llim(self, value):
+        '''Set upper limit.'''
+        try:
+            command = f"LLIM {value}\n"
+            self.tn.write(bytes(command, 'ascii'))
+            i, match, data = self.tn.expect([self.llim_regex], timeout=self.timeout)
+            return float(match.groups()[0])
+        except Exception as e:
+            print(f"CS-4 set llim failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 llim set')
 
 
         # self.status.update({'current': {'value': '0', 'query': "IMAG?", 'text': 'Magnet Current (A)'}})

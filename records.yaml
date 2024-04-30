@@ -95,3 +95,11 @@ Six_TI:
     HIGH: 180
     LOW: 2
     LOLO: 1
+Magnet_LI:
+    DESC: 'Magnet Level Probe Reading'
+    PREC: 2
+    EGU: 'cm'
+    HIHI: 70
+    HIGH: 65
+    LOW: 35
+    LOLO: 30

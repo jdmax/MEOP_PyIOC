@@ -78,7 +78,7 @@ dat8018:
         - Six_TI
         - None
         - None
-lm_500:
+lm500:
     module: 'devices.lm500'
     autostart: True          # Should IOC Manager try to start this?
     ip: '129.57.37.111'
