@@ -1,6 +1,5 @@
 import telnetlib
 import re
-import time
 from softioc import builder, alarm
 
 
@@ -20,16 +19,19 @@ class Device():
         self.channels = settings['channels']
         self.pvs = {}
         sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
+        self.sweep_choice = ['UP', 'DOWN', 'PAUSE', 'ZERO', 'UP FAST', 'DOWN FAST']
 
         for channel in settings['channels']:  # set up PVs for each channel
             if "None" in channel: continue
             self.pvs[channel + "_VI"] = builder.aIn(channel + "_VI", **sevr)  # Voltage
-            self.pvs[channel + "_CI"] = builder.aIn(channel + "_CI", **sevr)  # Current
+            self.pvs[channel + "_Coil_CI"] = builder.aIn(channel + "_Coil_CI", **sevr)  # Current
+            self.pvs[channel + "_Lead_CI"] = builder.aIn(channel + "_Lead_CI", **sevr)  # Current
 
-            self.pvs[channel + "_CC"] = builder.aOut(channel + "_CC", on_update_name=self.do_sets, **sevr)
-            self.pvs[channel + "_VC"] = builder.aOut(channel + "_VC", on_update_name=self.do_sets, **sevr)
+            self.pvs[channel + "_ULIM"] = builder.aOut(channel + "_ULIM", on_update_name=self.do_sets, **sevr)
+            self.pvs[channel + "_LLIM"] = builder.aOut(channel + "_LLIM", on_update_name=self.do_sets, **sevr)
 
-            self.pvs[channel + "_Mode"] = builder.boolOut(channel + "_Mode", on_update_name=self.do_sets)
+            self.pvs[channel + "_Sweep"] = builder.mbbOut(channel + "_Mode", *self.sweep_choice, on_update_name=self.do_sets)
+            self.pvs[channel + "_Heater"] = builder.boolOut(channel + "_Mode", on_update_name=self.do_sets)
 
     def connect(self):
         '''Open connection to device'''
@@ -44,11 +46,10 @@ class Device():
         for i, pv_name in enumerate(self.channels):
             if "None" in pv_name: continue
             try:
-                values = self.t.read_sp(str(i + 1))
-                self.pvs[pv_name + '_VC'].set(values[0])  # set returned voltage
-                self.pvs[pv_name + '_CC'].set(values[1])  # set returned current
-                value = self.t.set_state(str(i + 1), self.pvs[pv_name].get())
-                self.pvs[pv_name + '_Mode'].set(int(value))  # set returned value
+                self.pvs[pv_name + '_ULIM'].set(self.t.read_ulim())
+                self.pvs[pv_name + '_LLIM'].set(self.t.read_llim())
+                self.pvs[pv_name + '_Sweep'].set(self.t.read_sweep())
+                self.pvs[pv_name + '_Heater'].set(self.t.read_heater())
             except OSError:
                 print("Read out error on", pv_name)
                 self.reconnect()
@@ -153,7 +154,7 @@ class DeviceConnection():
             raise OSError('CS-4 read')
 
     def read_out(self):
-        """Read power supply current."""
+        """Read power supply lead current."""
         try:
             command = f"IOUT?\n"
             self.tn.write(bytes(command, 'ascii'))  # Reading
@@ -252,7 +253,7 @@ class DeviceConnection():
         elif b'zeroing' in stat:
             return 3
         else:
-            print(f"CS-4 status decision failed on {self.host}: {e}")
+            print(f"CS-4 status decision failed on {self.host}")
             raise OSError('CS-4 status decision')
 
     def read_units(self):

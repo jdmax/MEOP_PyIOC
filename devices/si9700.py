@@ -47,6 +47,7 @@ class Device():
             for i, channel in enumerate(self.channels):
                 if "None" in channel: continue
                 self.pvs[channel].set(temps[i])
+                print(temps[i])
                 self.remove_alarm(channel)
         except OSError:
             for i, channel in enumerate(self.channels):
@@ -92,7 +93,7 @@ class DeviceConnection():
         try: 
             self.tn.write(bytes(f"TALL?\r",'ascii'))     # 0 means it will return all channels
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
-            print(data)
+            #print(data)
             return [float(x) for x in match.groups()]
             
         except Exception as e:
