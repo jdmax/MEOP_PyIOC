@@ -30,8 +30,8 @@ class Device():
             self.pvs[channel + "_ULIM"] = builder.aOut(channel + "_ULIM", on_update_name=self.do_sets, **sevr)
             self.pvs[channel + "_LLIM"] = builder.aOut(channel + "_LLIM", on_update_name=self.do_sets, **sevr)
 
-            self.pvs[channel + "_Sweep"] = builder.mbbOut(channel + "_Mode", *self.sweep_choice, on_update_name=self.do_sets)
-            self.pvs[channel + "_Heater"] = builder.boolOut(channel + "_Mode", on_update_name=self.do_sets)
+            self.pvs[channel + "_Sweep"] = builder.mbbOut(channel + "_Sweep", *self.sweep_choice, on_update_name=self.do_sets)
+            self.pvs[channel + "_Heater"] = builder.boolOut(channel + "_Heater", on_update_name=self.do_sets)
 
     def connect(self):
         '''Open connection to device'''

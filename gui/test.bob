@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2024-05-06 15:45:53 by poltar-->
+<!--Saved on 2024-05-07 14:15:52 by poltar-->
 <display version="2.0.0">
   <name>Display</name>
   <widget type="label" version="2.0.0">
     <name>Label</name>
     <class>TITLE</class>
-    <text>MEOP Magnet Status</text>
+    <text>MEOP Magnet Liquifier Status</text>
     <x use_class="true">0</x>
     <y use_class="true">0</y>
     <width>550</width>
@@ -285,7 +285,7 @@
   </widget>
   <widget type="label" version="2.0.0">
     <name>Label_19</name>
-    <text>Level OC:</text>
+    <text>Level IOC:</text>
     <x>300</x>
     <y>200</y>
     <width>130</width>
