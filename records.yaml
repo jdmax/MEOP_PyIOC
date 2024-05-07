@@ -103,3 +103,35 @@ Magnet_LI:
     HIGH: 65
     LOW: 35
     LOLO: 30
+Magnet_VI:
+    DESC: 'Magnet Lead Voltage'
+    PREC: 2
+    EGU: 'V'
+    HIHI: 10
+    HIGH: 8
+    LOW: -1
+    LOLO: -2
+Magnet_Coil_CI:
+    DESC: 'Magnet Coil Current'
+    PREC: 2
+    EGU: 'A'
+    HIHI: 85
+    HIGH: 83
+    LOW: -1
+    LOLO: -2
+Magnet_Lead_CI:
+    DESC: 'Magnet Lead Current'
+    PREC: 2
+    EGU: 'A'
+    HIHI: 85
+    HIGH: 83
+    LOW: -1
+    LOLO: -2
+Magnet_ULIM:
+    DESC: 'Magnet Upper Current Limit'
+    PREC: 2
+    EGU: 'A'
+Magnet_LLIM:
+    DESC: 'Magnet Lower Current Limit'
+    PREC: 2
+    EGU: 'A'

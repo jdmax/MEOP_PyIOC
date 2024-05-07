@@ -19,7 +19,7 @@ class Device():
         self.channels = settings['channels']
         self.pvs = {}
         sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
-        self.sweep_choice = ['UP', 'DOWN', 'PAUSE', 'ZERO', 'UP FAST', 'DOWN FAST']
+        self.sweep_choice = ['UP', 'DOWN', 'PAUSE', 'ZERO', 'UP FAST', 'DOWN FAST', 'ZERO FAST']
 
         for channel in settings['channels']:  # set up PVs for each channel
             if "None" in channel: continue
@@ -37,6 +37,7 @@ class Device():
         '''Open connection to device'''
         try:
             self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
+            self.t.set_remote(True)
             self.read_outs()
         except Exception as e:
             print(f"Failed connection on {self.settings['ip']}, {e}")
@@ -74,9 +75,14 @@ class Device():
                 self.pvs[pv_name].set(float(value))  # set returned value
             elif '_Sweep' in pv_name:
                 value = self.t.set_sweep(self.pvs[p + '_Sweep'].get())
-                if value == 4 or value == 5:
+                if value == 4 or value == 5 or value == 6:
                     if self.pvs[p + '_Heater'].get(): # if heater on, don't allow fast sweep modes
-                        value = 0 if value == 4 else 1   # if it's 4, set to 0, if it's 5 set to 1
+                        if value == 4:
+                            value = 0
+                        elif value == 5:
+                            value = 1
+                        elif value == 6:
+                            value = 3
                 self.pvs[pv_name].set(int(value))  # set returned value
             elif '_Heater' in pv_name:
                 value = self.t.set_heater(self.pvs[p + '_Heater'].get())
@@ -151,7 +157,7 @@ class DeviceConnection():
         self.llim_set_regex = re.compile(b'LLIM\s(.*)\r\n')
         self.any_regex = re.compile(b'(.*)\r\n')
 
-        self.sweep_choice = ['UP', 'DOWN', 'PAUSE', 'ZERO', 'UP FAST', 'DOWN FAST']
+        self.sweep_choice = ['UP', 'DOWN', 'PAUSE', 'ZERO', 'UP FAST', 'DOWN FAST', 'ZERO FAST']
 
     def read_current(self):
         """Read magnet current."""
