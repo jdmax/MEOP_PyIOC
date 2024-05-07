@@ -63,15 +63,23 @@ class Device():
         """Set PVs values to device"""
         pv_name = pv.replace(self.device_name + ':', '')  # remove device name from PV to get bare pv_name
         p = pv_name.split("_")[0]  # pv_name root
-        chan = self.channels.index(p) + 1  # determine what channel we are on
+        # chan = self.channels.index(p) + 1  # determine what channel we are on
         # figure out what type of PV this is, and send it to the right method
         try:
-            if 'CC' in pv_name or 'VC' in pv_name:  # is this a current set? Voltage set from settings file
-                values = self.t.set(chan, self.pvs[p + '_VC'].get(), self.pvs[p + '_CC'].get())
-                self.pvs[p + '_VC'].set(values[0])  # set returned voltage
-                self.pvs[p + '_CC'].set(values[1])  # set returned current
-            elif 'Mode' in pv_name:
-                value = self.t.set_state(chan, new_value)
+            if '_ULIM' in pv_name:
+                value = self.t.set_ulim(self.pvs[p + '_ULIM'].get())
+                self.pvs[pv_name].set(float(value))  # set returned value
+            elif '_LLIM' in pv_name:
+                value = self.t.set_llim(self.pvs[p + '_LLIM'].get())
+                self.pvs[pv_name].set(float(value))  # set returned value
+            elif '_Sweep' in pv_name:
+                value = self.t.set_sweep(self.pvs[p + '_Sweep'].get())
+                if value == 4 or value == 5:
+                    if self.pvs[p + '_Heater'].get(): # if heater on, don't allow fast sweep modes
+                        value = 0 if value == 4 else 1   # if it's 4, set to 0, if it's 5 set to 1
+                self.pvs[pv_name].set(int(value))  # set returned value
+            elif '_Heater' in pv_name:
+                value = self.t.set_heater(self.pvs[p + '_Heater'].get())
                 self.pvs[pv_name].set(int(value))  # set returned value
             else:
                 print('Error, control PV not categorized.', pv_name)
@@ -86,9 +94,12 @@ class Device():
         for i, channel in enumerate(self.channels):
             if "None" in channel: continue
             try:
-                new_reads[channel + '_VI'], new_reads[channel + '_CI'], power = self.t.read(i + 1)
-                new_reads[channel + '_VC'], new_reads[channel + '_CC'] = self.t.read_sp(i + 1)
-                new_reads[channel + '_Mode'] = self.t.read_state(i + 1)
+                # list is heater, float(voltage), float(magnet), float(out), self.status_dec(sweep)
+                (new_reads[channel + '_Heater'],
+                 new_reads[channel + '_VI'],
+                 new_reads[channel + '_Coil_CI'],
+                 new_reads[channel + '_Lead_CI'],
+                 new_reads[channel + '_Sweep']) = self.t.read_status()
             except OSError:
                 self.set_alarm(channel + "_VI")
                 self.reconnect()
@@ -325,6 +336,21 @@ class DeviceConnection():
         except Exception as e:
             print(f"CS-4 set llim failed on {self.host}: {e},{command},{data}")
             raise OSError('CS-4 llim set')
+
+    def set_heater(self, value):
+        '''Set heater status. Value is True or False.'''
+        state = 'off' if value else 'on'
+        try:
+            command = f"PSHTR {state}\n"
+            self.tn.write(bytes(command, 'ascii'))  # Reading
+            i, match, data = self.tn.expect([self.on_off_regex], timeout=self.timeout)
+            if b'1' in match.groups()[0]:
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"CS-4 read heater failed on {self.host}: {e},{command},{data}")
+            raise OSError('CS-4 read')
 
         # self.status.update({'current': {'value': '0', 'query': "IMAG?", 'text': 'Magnet Current (A)'}})
         # self.status.update({'ps_current': {'value': '0', 'query': "IOUT?", 'text': 'Power Supply Current (A)'}})
