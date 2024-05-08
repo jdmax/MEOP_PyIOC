@@ -147,6 +147,8 @@ class DeviceConnection():
         self.current_regex = re.compile(b'(\d+.\d+)\sA')
         self.voltage_regex = re.compile(b'(-?\d+.\d+)\sV')
         self.on_off_regex = re.compile(b'(0|1)')
+        self.heater_set_regex = re.compile(b'PSHTR.*\r\n')
+        self.heater_read_regex = re.compile(b'PSHTR\?\r\n(0|1)\r\n')
         self.sweep_regex = re.compile(b'SWEEP\??\r\n(.+)\r\n')
         self.status_regex = re.compile(
             b'PSHTR\?;VMAG\?;IMAG\?;IOUT\?;SWEEP\?\r\n(\d);(-?\d+\.\d+) V;(-?\d+\.\d+) A;(-?\d+\.\d+) A;(.*)\r\n')
@@ -219,7 +221,7 @@ class DeviceConnection():
         try:
             command = f"PSHTR?\n"
             self.tn.write(bytes(command, 'ascii'))  # Reading
-            i, match, data = self.tn.expect([self.on_off_regex], timeout=self.timeout)
+            i, match, data = self.tn.expect([self.heater_read_regex], timeout=self.timeout)
             if b'1' in match.groups()[0]:
                 return True
             else:
@@ -261,6 +263,8 @@ class DeviceConnection():
             return 4
         elif b'sweep down fast' in stat:
             return 5
+        elif b'sweep zero fast' in stat:
+            return 6
         elif b'sweep up' in stat:
             return 0
         elif b'sweep down' in stat:
@@ -345,11 +349,14 @@ class DeviceConnection():
 
     def set_heater(self, value):
         '''Set heater status. Value is True or False.'''
-        state = 'off' if value else 'on'
+        state = 'on' if value else 'off'
         try:
             command = f"PSHTR {state}\n"
             self.tn.write(bytes(command, 'ascii'))  # Reading
-            i, match, data = self.tn.expect([self.on_off_regex], timeout=self.timeout)
+            i, match, data = self.tn.expect([self.heater_set_regex], timeout=self.timeout)
+            command = f"PSHTR?\n"
+            self.tn.write(bytes(command, 'ascii'))  # Reading
+            i, match, data = self.tn.expect([self.heater_read_regex], timeout=self.timeout)
             if b'1' in match.groups()[0]:
                 return True
             else:

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2024-05-07 14:15:52 by poltar-->
+<!--Saved on 2024-05-08 10:03:58 by poltar-->
 <display version="2.0.0">
-  <name>Display</name>
+  <name>Liquifier Status</name>
   <widget type="label" version="2.0.0">
     <name>Label</name>
     <class>TITLE</class>
