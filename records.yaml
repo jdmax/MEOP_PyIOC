@@ -109,8 +109,8 @@ Magnet_VI:
     EGU: 'V'
     HIHI: 10
     HIGH: 8
-    LOW: -1
-    LOLO: -2
+    LOW: -8
+    LOLO: -10
 Magnet_Coil_CI:
     DESC: 'Magnet Coil Current'
     PREC: 2
@@ -131,7 +131,15 @@ Magnet_ULIM:
     DESC: 'Magnet Upper Current Limit'
     PREC: 2
     EGU: 'A'
+    HIHI: 85
+    HIGH: 83
+    LOW: -1
+    LOLO: -2
 Magnet_LLIM:
     DESC: 'Magnet Lower Current Limit'
     PREC: 2
     EGU: 'A'
+    HIHI: 85
+    HIGH: 83
+    LOW: -1
+    LOLO: -2
