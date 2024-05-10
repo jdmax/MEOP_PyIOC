@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2024-05-09 11:19:09 by poltar-->
+<!--Saved on 2024-05-10 12:54:19 by poltar-->
 <display version="2.0.0">
   <name>Liquifier Status</name>
+  <width>700</width>
+  <height>300</height>
   <widget type="label" version="2.0.0">
     <name>Label</name>
     <class>TITLE</class>
@@ -177,37 +179,16 @@
     <width>130</width>
   </widget>
   <widget type="textupdate" version="2.0.0">
-    <name>Text Update_12</name>
-    <pv_name>ca://TGT:MEOP:MAN:dat8018_hb</pv_name>
-    <x>560</x>
-    <y>170</y>
-  </widget>
-  <widget type="bool_button" version="2.0.0">
-    <name>Boolean Button_4</name>
-    <pv_name>ca://TGT:MEOP:MAN:dat8018_control</pv_name>
-    <x>440</x>
-    <y>170</y>
-    <width>90</width>
-    <height>20</height>
-  </widget>
-  <widget type="label" version="2.0.0">
-    <name>Label_11</name>
-    <text>Thermocouple IOC:</text>
-    <x>300</x>
-    <y>170</y>
-    <width>130</width>
-  </widget>
-  <widget type="textupdate" version="2.0.0">
     <name>Text Update_20</name>
     <pv_name>ca://TGT:MEOP:MAN:lm500_hb</pv_name>
     <x>560</x>
-    <y>200</y>
+    <y>170</y>
   </widget>
   <widget type="bool_button" version="2.0.0">
     <name>Boolean Button_5</name>
     <pv_name>ca://TGT:MEOP:MAN:lm500_control</pv_name>
     <x>440</x>
-    <y>200</y>
+    <y>170</y>
     <width>90</width>
     <height>20</height>
   </widget>
@@ -215,7 +196,7 @@
     <name>Label_19</name>
     <text>Level IOC:</text>
     <x>300</x>
-    <y>200</y>
+    <y>170</y>
     <width>130</width>
   </widget>
   <widget type="textupdate" version="2.0.0">
