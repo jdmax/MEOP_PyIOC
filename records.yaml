@@ -101,8 +101,8 @@ Magnet_LI:
     EGU: 'cm'
     HIHI: 70
     HIGH: 65
-    LOW: 35
-    LOLO: 30
+    LOW: 40
+    LOLO: 36
 Magnet_VI:
     DESC: 'Magnet Lead Voltage'
     PREC: 2
