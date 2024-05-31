@@ -84,7 +84,7 @@ lm500:
     ip: '129.57.37.111'
     port: '1003'    # channel 1 of serial to ethernet
     timeout: 2
-    delay: 1
+    delay: 10
     channels:
         - Magnet_LI
 cs4_magnet:

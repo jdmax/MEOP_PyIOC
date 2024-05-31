@@ -17,7 +17,7 @@ Inlet_PI:
     LOLO: -150
 Liquifier_TI:
     DESC: 'Temperature from Liquifier Controller'
-    PREC: 2
+    PREC: 4
     EGU: 'K'
     HIHI: 310
     HIGH: 300
@@ -99,13 +99,13 @@ Magnet_LI:
     DESC: 'Magnet Level Probe Reading'
     PREC: 2
     EGU: 'cm'
-    HIHI: 70
-    HIGH: 65
+    HIHI: 65
+    HIGH: 64
     LOW: 40
     LOLO: 36
 Magnet_VI:
     DESC: 'Magnet Lead Voltage'
-    PREC: 2
+    PREC: 3
     EGU: 'V'
     HIHI: 10
     HIGH: 8
@@ -113,7 +113,7 @@ Magnet_VI:
     LOLO: -10
 Magnet_Coil_CI:
     DESC: 'Magnet Coil Current'
-    PREC: 2
+    PREC: 3
     EGU: 'A'
     HIHI: 85
     HIGH: 83
@@ -121,7 +121,7 @@ Magnet_Coil_CI:
     LOLO: -2
 Magnet_Lead_CI:
     DESC: 'Magnet Lead Current'
-    PREC: 2
+    PREC: 3
     EGU: 'A'
     HIHI: 85
     HIGH: 83
@@ -129,7 +129,7 @@ Magnet_Lead_CI:
     LOLO: -2
 Magnet_ULIM:
     DESC: 'Magnet Upper Current Limit'
-    PREC: 2
+    PREC: 3
     EGU: 'A'
     HIHI: 85
     HIGH: 83
@@ -137,7 +137,7 @@ Magnet_ULIM:
     LOLO: -2
 Magnet_LLIM:
     DESC: 'Magnet Lower Current Limit'
-    PREC: 2
+    PREC: 3
     EGU: 'A'
     HIHI: 85
     HIGH: 83
