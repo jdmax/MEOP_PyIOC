@@ -115,15 +115,15 @@ class DeviceConnection():
     def read_registers(self):
         '''Read all out channels.'''
         try:
-            return self.m.read_input_registers(40, 4)
+            return [int(x)/1000 for x in self.m.read_input_registers(40, 4)]
         except Exception as e:
             print(f"Datexel 8024 read failed on {self.host}: {e}")
             raise OSError('8024 read')
 
     def set_register(self, num, value):
-        '''Set output voltage for this channel'''
+        '''Set output voltage for this channel. Value is V.'''
         try:
-            self.m.write_single_register(40 + num, int(value))
+            self.m.write_single_register(40 + num, float(value)*1000)  # set as mV
             return self.read_registers()
         except Exception as e:
             print(f"Datexel 8024 write failed on {self.host}: {e}")
