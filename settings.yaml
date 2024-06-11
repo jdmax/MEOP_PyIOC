@@ -96,3 +96,15 @@ cs4_magnet:
     delay: 1
     channels:
         - Magnet
+dat8024:
+    module: 'devices.dat8024'
+    autostart: True          # Should IOC Manager try to start this?
+    ip: '129.57.37.132'
+    port: '502'
+    timeout: 2
+    delay: 2
+    channels: # List of channel names in order. None indicates unused channel.
+        - Voltage1_VC
+        - None
+        - None
+        - None

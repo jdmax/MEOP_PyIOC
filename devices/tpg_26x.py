@@ -91,6 +91,11 @@ class DeviceConnection():
             
         #self.read_regex = re.compile('([+-]\d+.\d+)')
         self.read_regex = re.compile(b'\d,(.+),.+,(.+)\r')
+        #self.read_regex = re.compile('\d,(.+),.+,(.+)\r')
+        self.enq = chr(5)
+        self.cr = chr(13)
+        self.lf = chr(10)
+        self.ack = chr(6)
          
     def read_all(self):
         '''Read all channels, return as list'''
@@ -98,6 +103,15 @@ class DeviceConnection():
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
             #print(data)
             return [float(x) for x in match.groups()]
+            #command = 'PR1' + self.cr + self.lf
+            #self.tn.write(bytes(command, 'ascii'))
+            #data = self.tn.read_eager().decode('ascii')
+            #print(data)
+            #self.tn.write(self.enq)
+            #data = self.tn.read_eager().decode('ascii')
+            #print(data)
+            #ms = self.read_regex.findall(data)
+            #[print(x, ',') for x in ms]
 
         except Exception as e:
             print(f"TPG26x read failed on {self.host}: {e}")

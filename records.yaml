@@ -143,3 +143,9 @@ Magnet_LLIM:
     HIGH: 83
     LOW: -1
     LOLO: -2
+Voltage1_VC:
+    DESC: 'DAC Output 1'
+    PREC: 3
+    EGU: 'V'
+    DRVH: 5
+    DRVL: 0
