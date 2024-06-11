@@ -123,7 +123,7 @@ class DeviceConnection():
     def set_register(self, num, value):
         '''Set output voltage for this channel. Value is V.'''
         try:
-            self.m.write_single_register(40 + num, float(value)*1000)  # set as mV
+            self.m.write_single_register(40 + num, int(value*1000))  # set as mV
             return self.read_registers()
         except Exception as e:
             print(f"Datexel 8024 write failed on {self.host}: {e}")
