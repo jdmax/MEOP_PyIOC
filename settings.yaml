@@ -16,6 +16,7 @@ pfeiffer-26x_1:
     delay: 1
     channels:
         - Outlet_PI
+        - OVC_PI
 pfeiffer-26x_2:
     module: 'devices.tpg_26x'
     autostart: True
