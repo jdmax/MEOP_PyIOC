@@ -7,6 +7,14 @@ Outlet_PI:
     HIGH: 1200
     LOW: -100
     LOLO: -150
+OVC_PI:
+    DESC: 'Magnet OVC Pressure'
+    PREC: 2
+    EGU: 'mbar'
+    HIHI: 1300
+    HIGH: 1200
+    LOW: -100
+    LOLO: -150
 Inlet_PI:
     DESC: 'Inlet Pressure'
     PREC: 2
