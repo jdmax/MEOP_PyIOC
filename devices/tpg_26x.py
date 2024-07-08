@@ -90,8 +90,8 @@ class DeviceConnection():
             print(f"TPG connection failed on {self.host}: {e}")
             
         #self.read_regex = re.compile('([+-]\d+.\d+)')
-        self.read_regex = re.compile(b'\d,(.+),.+,(.+)\r')
-        #self.read_regex = re.compile('\d,(.+),.+,(.+)\r')
+        self.ack_regex = re.compile(b'\r\n')
+        self.read_regex = re.compile(b'\d, (.+),\d, (.+)\r\n')
         self.enq = chr(5)
         self.cr = chr(13)
         self.lf = chr(10)
@@ -100,18 +100,16 @@ class DeviceConnection():
     def read_all(self):
         '''Read all channels, return as list'''
         try:
+            #i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
+            ##print(data)
+            #return [float(x) for x in match.groups()]
+            self.tn.write(b'\x03')
+            command = 'PRX\r\n'
+            self.tn.write(bytes(command, 'ascii'))
+            i, match, data = self.tn.expect([self.ack_regex], timeout=self.timeout)
+            self.tn.write(b'\x05')
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
-            #print(data)
             return [float(x) for x in match.groups()]
-            #command = 'PR1' + self.cr + self.lf
-            #self.tn.write(bytes(command, 'ascii'))
-            #data = self.tn.read_eager().decode('ascii')
-            #print(data)
-            #self.tn.write(self.enq)
-            #data = self.tn.read_eager().decode('ascii')
-            #print(data)
-            #ms = self.read_regex.findall(data)
-            #[print(x, ',') for x in ms]
 
         except Exception as e:
             print(f"TPG26x read failed on {self.host}: {e}")

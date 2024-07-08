@@ -13,7 +13,7 @@ pfeiffer-26x_1:
     ip: '129.57.37.103'
     port: '1001'            # channel 1 of serial to ethernet
     timeout: 2
-    delay: 5
+    delay: 1
     channels:
         - Outlet_PI
 pfeiffer-26x_2:
@@ -22,7 +22,7 @@ pfeiffer-26x_2:
     ip: '129.57.37.103'
     port: '1002'            # channel 2 of serial to ethernet
     timeout: 2
-    delay: 5
+    delay: 1
     channels:
         - Inlet_PI
 si9700:

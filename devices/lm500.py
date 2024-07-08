@@ -84,7 +84,7 @@ class DeviceConnection():
         except Exception as e:
             print(f"LS218 connection failed on {self.host}: {e}")
 
-        self.read_regex = re.compile(b'.+\r\n(\d*\.\d)\s')
+        self.read_regex = re.compile(b'.+\r\n(-?\d*\.\d)\s')
          
     def read_all(self):
         '''Read level.'''
@@ -96,6 +96,6 @@ class DeviceConnection():
             return [float(x) for x in match.groups()]
             
         except Exception as e:
-            print(f"LS218 read failed on {self.host}: {e}")
+            print(f"LS218 read failed on {self.host}: {e}, {data}")
             raise OSError('LS218 read')
         
