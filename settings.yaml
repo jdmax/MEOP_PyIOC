@@ -13,7 +13,7 @@ pfeiffer-26x_1:
     ip: '129.57.37.103'
     port: '1001'            # channel 1 of serial to ethernet
     timeout: 2
-    delay: 1
+    delay: 5
     channels:
         - Outlet_PI
         - OVC_PI
@@ -23,7 +23,7 @@ pfeiffer-26x_2:
     ip: '129.57.37.103'
     port: '1002'            # channel 2 of serial to ethernet
     timeout: 2
-    delay: 1
+    delay: 5
     channels:
         - Inlet_PI
 si9700:
@@ -109,3 +109,14 @@ dat8024:
         - None
         - None
         - None
+dat8017_i:
+    module: 'devices.dat8017'
+    autostart: True
+    ip: '192.168.1.149'
+    port: '502'
+    timeout: 2
+    delay: 2
+    channels:  # List of PV names for each read channel of datexel in order
+        - Bottle_PI
+    calibration:  # psi gauge range for calibration
+        Bottle_PI: 3000
