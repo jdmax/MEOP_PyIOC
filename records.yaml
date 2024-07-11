@@ -23,6 +23,14 @@ Inlet_PI:
     HIGH: 1200
     LOW: -100
     LOLO: -150
+Bottle_PI:
+    DESC: 'Bottle Pressure'
+    PREC: 2
+    EGU: 'psi'
+    HIHI: 3000
+    HIGH: 2900
+    LOW: 100
+    LOLO: 0
 Liquifier_TI:
     DESC: 'Temperature from Liquifier Controller'
     PREC: 4
