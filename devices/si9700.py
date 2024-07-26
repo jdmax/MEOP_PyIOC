@@ -62,10 +62,10 @@ class Device():
         try:
             if '_SP' in pv_name:
                 value = self.t.set_setpoint(self.pvs[pv_name].get())
-                self.pvs[pv_name].set(float(value))  # set returned value
+                self.pvs[pv_name].set(value)  # set returned value
             elif '_Mode' in pv_name:
                 value = self.t.set_mode(self.pvs[pv_name].get())
-                self.pvs[pv_name].set(float(value))  # set returned value
+                self.pvs[pv_name].set(value)  # set returned value
             else:
                 print('Error, control PV not categorized.', pv_name)
         except OSError:
@@ -135,14 +135,14 @@ class DeviceConnection():
             raise OSError('SI9700 read')
 
     def read_status(self):
-        '''Read status. Returns setpoint, heater percentage and mode.'''
+        '''Read status. Returns setpoint, heater percentage and mode. There is no 0 mode, so subtract 1.'''
         try:
             self.tn.write(bytes(f"STA?\r",'ascii'))     # 0 means it will return all channels
             i, match, data = self.tn.expect([self.status_regex], timeout=self.timeout)
-            print(data)
+            #print(data)
             setpoint, heater, mode, alarm, gui, control, zone = match.groups()
-            print(float(setpoint), float(heater), int(mode))
-            return float(setpoint), float(heater), int(mode)
+            #print(float(setpoint), float(heater), int(mode)-1)
+            return float(setpoint), float(heater), int(mode)-1
 
         except Exception as e:
             print(f"SI9700 status read failed on {self.host}: {e}")
@@ -153,7 +153,7 @@ class DeviceConnection():
         try:
             self.tn.write(bytes(f"SET {value}\r",'ascii'))
             setpoint, heater, mode = self.read_status()
-            print("sp",setpoint)
+            #print("sp",setpoint)
             return setpoint
 
         except Exception as e:
@@ -163,9 +163,9 @@ class DeviceConnection():
     def set_mode(self, value):
         '''Sets mode, returns result'''
         try:
-            self.tn.write(bytes(f"MODE {value}\r",'ascii'))
+            self.tn.write(bytes(f"MODE {value + 1}\r",'ascii'))
             setpoint, heater, mode = self.read_status()
-            print("mode",mode)
+            #print("mode",mode)
             return mode
 
         except Exception as e:
