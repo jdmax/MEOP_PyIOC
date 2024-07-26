@@ -39,6 +39,24 @@ Liquifier_TI:
     HIGH: 300
     LOW: 2
     LOLO: 1
+Liquifier_Heater:
+    DESC: 'Heater Percentage'
+    PREC: 1
+    EGU: '%'
+    HIHI: 100
+    HIGH: 95
+    LOW: -1
+    LOLO: -2
+Liquifier_SP:
+    DESC: 'Setpoint from Liquifier Controller'
+    PREC: 3
+    EGU: 'K'
+    HIHI: 300
+    HIGH: 275
+    LOW: 2
+    LOLO: 1
+Liquifier_Mode:
+    DESC: 'Heater Mode from Liquifier Controller'
 Reservoir_TI:
     DESC: 'Temperature of Magnet Reservoir'
     PREC: 2
