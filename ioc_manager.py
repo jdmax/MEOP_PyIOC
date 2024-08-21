@@ -205,7 +205,7 @@ class StartThread(Thread):
             if os.path.getsize(f"{self.parent.settings['general']['log_dir']}/{self.name}") > 10:
                 with open(f"{self.parent.settings['general']['log_dir']}/{self.name}") as f:
                     for line in f:
-                        match = re.search(f"({self.parent.settings['general']['prefix']}.+)\s", line)
+                        match = re.search(f"({self.parent.settings['general']['prefix']}.+)"+r'\s', line)
                         if match:
                             pvs.append(match.group(1))
                 self.parent.ioc_pvs[self.name] = pvs   # send the list of pvs back to manager
