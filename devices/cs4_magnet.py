@@ -144,7 +144,7 @@ class DeviceConnection():
         except Exception as e:
             print(f"CS-4 connection failed on {self.host}: {e}")
 
-        self.current_regex = re.compile(b'(\d+.\d+)\sA')
+        self.current_regex = re.compile(b'(-?\d+.\d+)\sA')
         self.voltage_regex = re.compile(b'(-?\d+.\d+)\sV')
         self.on_off_regex = re.compile(b'(0|1)')
         self.heater_set_regex = re.compile(b'PSHTR.*\r\n')
