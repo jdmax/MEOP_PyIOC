@@ -4,7 +4,7 @@ from softioc import builder, alarm
 
 
 class Device():
-    '''Makes library of PVs needed for Cryomagnetics CS-4 power supply and provides methods connect them to the device
+    '''Makes library of PVs needed for Cryomagnetics 4G power supply and provides methods connect them to the device
 
     Attributes:
         pvs: dict of Process Variables keyed by name
@@ -126,11 +126,11 @@ class Device():
 
 
 class DeviceConnection():
-    '''Handle connection to Cryomagnetics CS-4 via Telnet.
+    '''Handle connection to Cryomagnetics 4G via Telnet.
     '''
 
     def __init__(self, host, port, timeout):
-        '''Open connection to Cryomagnetics CS-4
+        '''Open connection to Cryomagnetics 4G.
         Arguments:
             host: IP address
         port: Port of device

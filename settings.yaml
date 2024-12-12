@@ -88,15 +88,24 @@ lm500:
     delay: 10
     channels:
         - Magnet_LI
-cs4_magnet:
-    module: 'devices.cs4_magnet'
+4g_magnet:
+    module: 'devices.4g_magnet'
     autostart: True          # Should IOC Manager try to start this?
-    ip: '129.57.37.111'
-    port: '1001'    # channel 1 of serial to ethernet
+    ip: '129.57.37.81'
+    port: '4444'    # channel 1 of serial to ethernet
     timeout: 2
     delay: 2
     channels:
         - Magnet
+#cs4_magnet:
+#    module: 'devices.cs4_magnet'
+#    autostart: True          # Should IOC Manager try to start this?
+#    ip: '129.57.37.111'
+#    port: '1001'    # channel 1 of serial to ethernet
+#    timeout: 2
+#    delay: 2
+#    channels:
+#        - Magnet
 dat8024:
     module: 'devices.dat8024'
     autostart: True          # Should IOC Manager try to start this?
