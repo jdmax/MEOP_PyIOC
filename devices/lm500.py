@@ -82,7 +82,7 @@ class DeviceConnection():
         try:
             self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)                  
         except Exception as e:
-            print(f"LS218 connection failed on {self.host}: {e}")
+            print(f"LM-500 connection failed on {self.host}: {e}")
 
         self.read_regex = re.compile(b'.+\r\n(-?\d*\.\d)\s')
          
@@ -96,6 +96,6 @@ class DeviceConnection():
             return [float(x) for x in match.groups()]
             
         except Exception as e:
-            print(f"LS218 read failed on {self.host}: {e}, {data}")
-            raise OSError('LS218 read')
+            print(f"LM-500 read failed on {self.host}: {e}, {data}")
+            raise OSError('LM-500 read')
         
