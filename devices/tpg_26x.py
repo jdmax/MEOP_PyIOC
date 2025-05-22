@@ -71,10 +71,10 @@ class Device():
 
 
 class DeviceConnection():
-    '''Handle connection to Lakeshore Model 218 via serial over ethernet. 
+    '''Handle connection to Pfeiffer TPG 26x via serial over ethernet.
     '''
     def __init__(self, host, port, timeout):        
-        '''Open connection to Lakeshore 218
+        '''Open connection
         Arguments:
             host: IP address
             port: Port of device
@@ -112,5 +112,5 @@ class DeviceConnection():
             return [float(x) for x in match.groups()]
 
         except Exception as e:
-            print(f"TPG26x read failed on {self.host}: {e}")
+            print(f"TPG26x read failed on {self.host}: {e}, data")
 

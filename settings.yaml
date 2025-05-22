@@ -42,7 +42,7 @@ lakeshore_218:
     ip: '129.57.37.111'
     port: '1002'    # channel 1 of serial to ethernet
     timeout: 2
-    delay: 5
+    delay: 10
     channels:   # List of PV names for each read channel of 218 in order
         - Reservoir_TI
         - None
