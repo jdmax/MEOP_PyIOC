@@ -112,5 +112,5 @@ class DeviceConnection():
             return [float(x) for x in match.groups()]
 
         except Exception as e:
-            print(f"TPG26x read failed on {self.host}: {e}, data")
+            print(f"TPG26x read failed on {self.host}: {e}, {data}")
 
