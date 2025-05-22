@@ -91,7 +91,7 @@ class DeviceConnection():
             
         #self.read_regex = re.compile('([+-]\d+.\d+)')
         self.ack_regex = re.compile(b'\r\n')
-        self.read_regex = re.compile(b'\d, (.+),\d, (.+)\r\n')
+        self.read_regex = re.compile(b'\d,(.+),\d,(.+)\r\n')
         self.enq = chr(5)
         self.cr = chr(13)
         self.lf = chr(10)
