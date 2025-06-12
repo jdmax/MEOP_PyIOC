@@ -77,7 +77,7 @@ dat8018:
         - Four_TI
         - Five_TI
         - Six_TI
-        - None
+        - Seven_TI
         - None
 lm500:
     module: 'devices.lm500'
