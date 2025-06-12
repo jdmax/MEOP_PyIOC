@@ -78,7 +78,7 @@ dat8018:
         - Five_TI
         - Six_TI
         - Seven_TI
-        - None
+        - Eight_TI
 lm500:
     module: 'devices.lm500'
     autostart: True          # Should IOC Manager try to start this?
