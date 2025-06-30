@@ -129,6 +129,22 @@ Six_TI:
     HIGH: 180
     LOW: 2
     LOLO: 1
+Seven_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
+Eight_TI:
+    DESC: 'TC'
+    PREC: 2
+    EGU: 'C'
+    HIHI: 200
+    HIGH: 180
+    LOW: 2
+    LOLO: 1
 Magnet_LI:
     DESC: 'Magnet Level Probe Reading'
     PREC: 2
