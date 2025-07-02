@@ -14,7 +14,7 @@ import datetime
 
 async def main():
     """
-    IOC to manage IOCS. Sets up PVs for each IOC in settings file to allow starting and stopping.
+    IOC to manage IOCs. Sets up PVs for each IOC in settings file to allow starting and stopping.
     Uses Unix Screen to run master_ioc for each device IOC.
     """
 

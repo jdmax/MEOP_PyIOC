@@ -10,15 +10,14 @@ import datetime
 
 async def main():
     """
-    Run an IOC: load settings, create dispatcher, set name, do boilerplate, loop on device coroutine and start interactive interface
+    Run an IOC: load settings, create dispatcher, set name, do boilerplate,
+    loop on device coroutine and start interactive interface
     Device to be set up comes from command line argument choosing option from settings file
     """
     ioc, settings, records = load_settings()
 
     os.environ['EPICS_CA_ADDR_LIST'] = settings['general']['epics_addr_list']
-    #os.environ['EPICS_CAS_BEACON_ADDR_LIST'] = settings['general']['epics_beacon_addr_list']
     os.environ['EPICS_CA_AUTO_ADDR_LIST'] = 'NO'
-    #os.environ['EPICS_CAS_AUTO_BEACON_ADDR_LIST'] = 'NO'
 
     dispatcher = asyncio_dispatcher.AsyncioDispatcher()
     device_name = settings['general']['prefix']
@@ -38,6 +37,9 @@ async def main():
 
 class DeviceIOC():
     """Set up PVs for a given device IOC, run thread to interact with device
+
+    This class remains virtually unchanged - the new device classes maintain
+    the same external interface as the original implementations.
     """
 
     def __init__(self, device_name, ioc, settings, records):
@@ -47,46 +49,53 @@ class DeviceIOC():
             settings: dict of device settings
             records: dict of record settings
         '''
-
+        # Import the device module - works the same as before
         self.module = importlib.import_module(settings[ioc]['module'])
         self.records = records
         self.delay = settings[ioc]['delay']
         self.now = datetime.datetime.now()
 
+        # Create device instance - same interface as before
         self.device = self.module.Device(device_name, settings[ioc])
         self.device.connect()
+
+        # Create timestamp PV
         self.pv_time = builder.aIn(f"MAN:{ioc}_time")
         self.pv_time.set(datetime.datetime.now().timestamp())
 
-        for name, entry in self.device.pvs.items():  # set the attributes of the PV (optional)
+        # Apply record settings - works the same as before
+        for name, entry in self.device.pvs.items():
             if name in self.records:
                 for field, value in self.records[name].items():
                     setattr(self.device.pvs[name], field, value)
 
     async def loop(self):
-        """Read indicator PVS from controller channels. Delay time between measurements is in seconds.
-        If read is successful, set timestamp PV for IOC.
-         """
+        """Read indicator PVS from controller channels.
+
+        This method remains completely unchanged - the device.do_reads()
+        interface is preserved in all refactored device classes.
+        """
         await asyncio.sleep(self.delay)
-        if await self.device.do_reads():  # get new readings from device and set into PVs
-            self.pv_time.set(datetime.datetime.now().timestamp())   # set time of last successful update
+        if await self.device.do_reads():  # Same interface as before
+            self.pv_time.set(datetime.datetime.now().timestamp())
 
 
 def load_settings():
     """Load device settings and records from YAML settings files.
-    Argument parser allows '-s' to give a different folder, '-i' tells which IOC to run"""
 
+    This function remains completely unchanged.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", help="Settings file folder, default is here.")
     parser.add_argument("-i", help="Name of IOC to start")
     args = parser.parse_args()
     folder = args.s if args.s else '.'
 
-    with open(f'{folder}/settings.yaml') as f:  # Load settings from YAML files
+    with open(f'{folder}/settings.yaml') as f:
         settings = yaml.load(f, Loader=yaml.FullLoader)
     print(f"Loaded device settings from {folder}/settings.yaml.")
 
-    with open(f'{folder}/records.yaml') as f:  # Load settings from YAML files
+    with open(f'{folder}/records.yaml') as f:
         records = yaml.load(f, Loader=yaml.FullLoader)
     print(f"Loaded records from {folder}/records.yaml.")
 
