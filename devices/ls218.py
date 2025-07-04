@@ -11,18 +11,6 @@ class Device(TelnetDevice):
         for channel in self._skip_none_channels():
             self.pvs[channel] = builder.aIn(channel, **self.sevr)
 
-    async def do_reads(self):
-        """Read temperatures and update PVs"""
-        try:
-            temps = self.t.read_all()
-            for i, channel in enumerate(self._skip_none_channels()):
-                self.pvs[channel].set(temps[i])
-            self._handle_read_success()
-            return True
-        except OSError:
-            self._handle_read_error()
-            return False
-
 
 class DeviceConnection(TelnetConnection):
     """Handle connection to Lakeshore Model 218 via serial over ethernet"""

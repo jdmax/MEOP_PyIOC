@@ -11,18 +11,6 @@ class Device(TelnetDevice):
         for channel in self._skip_none_channels():
             self.pvs[channel] = builder.aIn(channel, **self.sevr)
 
-    async def do_reads(self):
-        """Read levels and update PVs"""
-        try:
-            levels = self.t.read()
-            for i, channel in enumerate(self._skip_none_channels()):
-                self.pvs[channel].set(levels[i])
-            self._handle_read_success()
-            return True
-        except OSError:
-            self._handle_read_error()
-            return False
-
 
 class DeviceConnection(TelnetConnection):
     """Handle connection to AMI Model 136 via serial over ethernet"""
@@ -31,7 +19,7 @@ class DeviceConnection(TelnetConnection):
 
         self.read_regex = re.compile('(\d+.\d+)')
 
-    def read(self):
+    def read_all(self):
         """Read level from device"""
         try:
             self.tn.write(bytes(f"LEVEL\n", 'ascii'))

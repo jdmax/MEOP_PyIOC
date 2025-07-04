@@ -13,6 +13,19 @@ class TelnetDevice(BaseDevice):
             self.settings['timeout']
         )
 
+    async def do_reads(self):
+        """Generic telnet read implementation"""
+        try:
+            readings = self.t.read_all()
+            for i, channel in enumerate(self._skip_none_channels()):
+                processed_value = self._process_reading(channel, readings[i])
+                self.pvs[channel].set(processed_value)
+            self._handle_read_success()
+            return True
+        except OSError:
+            self._handle_read_error()
+            return False
+
     def _process_reading(self, channel, raw_value):
         """Process raw reading value. Override in child classes if needed."""
         return raw_value
