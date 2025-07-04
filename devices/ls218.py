@@ -16,7 +16,6 @@ class DeviceConnection(TelnetConnection):
     """Handle connection to Lakeshore Model 218 via serial over ethernet"""
 
     def __init__(self):
-
         self.read_regex = re.compile('([+-]\d+.\d+)')
 
     def read_all(self):
