@@ -37,9 +37,6 @@ async def main():
 
 class DeviceIOC():
     """Set up PVs for a given device IOC, run thread to interact with device
-
-    This class remains virtually unchanged - the new device classes maintain
-    the same external interface as the original implementations.
     """
 
     def __init__(self, device_name, ioc, settings, records):
@@ -63,7 +60,7 @@ class DeviceIOC():
         self.pv_time = builder.aIn(f"MAN:{ioc}_time")
         self.pv_time.set(datetime.datetime.now().timestamp())
 
-        # Apply record settings - works the same as before
+        # Apply record settings, if they exist for the PV
         for name, entry in self.device.pvs.items():
             if name in self.records:
                 for field, value in self.records[name].items():
@@ -71,19 +68,14 @@ class DeviceIOC():
 
     async def loop(self):
         """Read indicator PVS from controller channels.
-
-        This method remains completely unchanged - the device.do_reads()
-        interface is preserved in all refactored device classes.
         """
         await asyncio.sleep(self.delay)
-        if await self.device.do_reads():  # Same interface as before
-            self.pv_time.set(datetime.datetime.now().timestamp())
+        if await self.device.do_reads():   # get new readings from device and set into PVs
+            self.pv_time.set(datetime.datetime.now().timestamp())   # set time of last successful update
 
 
 def load_settings():
     """Load device settings and records from YAML settings files.
-
-    This function remains completely unchanged.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", help="Settings file folder, default is here.")

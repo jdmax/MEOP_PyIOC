@@ -118,6 +118,7 @@ dat8024:
         - None
         - None
         - None
+    modbus_channels:
 dat8017_i:
     module: 'devices.dat8017'
     autostart: True

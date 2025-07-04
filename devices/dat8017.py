@@ -7,7 +7,7 @@ class Device(ModbusDevice):
 
     def __init__(self, device_name, settings):
         self.calibs = {}
-        super().__init__(device_name, settings)
+        super().__init__()
 
     def _create_pvs(self):
         """Create analog input PVs with calibration info"""
