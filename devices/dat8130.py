@@ -20,14 +20,6 @@ class Device(ModbusDevice):
             else:  # Digital IN next
                 self.pvs[channel] = builder.boolIn(channel, **sevr)
 
-    def _create_connection(self):
-        """Create connection with read/write capability"""
-        return ModbusConnection(
-            self.settings['ip'],
-            self.settings['port'],
-            self.settings['timeout']
-        )
-
     def _post_connect(self):
         """After connection, read initial output values"""
         self.read_outs()
@@ -85,25 +77,9 @@ class Device(ModbusDevice):
         self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
 
 
-class DeviceConnection():
+class DeviceConnection(ModbusConnection):
     """Handle connection to Datexel 8130.
     """
-
-    def __init__(self, host, port, timeout):
-        """Open connection to DAT8017
-        Arguments:
-            host: IP address
-            port: Port of device
-            timeout: Telnet timeout in secs
-        """
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-
-        try:
-            self.m = ModbusClient(host=self.host, port=int(self.port), unit_id=1, auto_open=True)
-        except Exception as e:
-            print(f"Datexel 8130 connection failed on {self.host}: {e}")
 
     def read_inputs(self):
         '''Read all channels.'''

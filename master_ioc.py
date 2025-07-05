@@ -46,13 +46,13 @@ class DeviceIOC():
             settings: dict of device settings
             records: dict of record settings
         '''
-        # Import the device module - works the same as before
+        # Import the device module
         self.module = importlib.import_module(settings[ioc]['module'])
         self.records = records
         self.delay = settings[ioc]['delay']
         self.now = datetime.datetime.now()
 
-        # Create device instance - same interface as before
+        # Create device instance
         self.device = self.module.Device(device_name, settings[ioc])
         self.device.connect()
 
