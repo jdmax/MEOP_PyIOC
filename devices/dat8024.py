@@ -15,14 +15,6 @@ class Device(ModbusDevice):
         for channel in self._skip_none_channels():
             self.pvs[channel] = builder.aOut(channel, on_update_name=self.do_sets, **self.sevr)
 
-    def _create_connection(self):
-        """Create DAT8024 connection with read/write capability"""
-        return ModbusConnection(
-            self.settings['ip'],
-            self.settings['port'],
-            self.settings['timeout']
-        )
-
     def _post_connect(self):
         """After connection, read initial output values"""
         self.read_outs()

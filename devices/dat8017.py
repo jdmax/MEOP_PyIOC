@@ -5,9 +5,9 @@ from softioc import builder
 class Device(ModbusDevice):
     """Datexel 8017 ADC (4-20mA or Voltage)"""
 
-    def __init__(self, device_name, settings):
-        self.calibs = {}
+    def __init__(self):
         super().__init__()
+        self.calibs = {}
 
     def _create_pvs(self):
         """Create analog input PVs with calibration info"""
