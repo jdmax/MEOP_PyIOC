@@ -39,7 +39,7 @@ class DeviceIOC():
     """Set up PVs for a given device IOC, run thread to interact with device
     """
 
-    def __init__(self, device_name, ioc, settings, records):
+    def __init__(self, device_name, ioc, settings):
         '''
         Arguments:
             device_name: name of device for PV prefix
@@ -48,12 +48,13 @@ class DeviceIOC():
         '''
         # Import the device module
         self.module = importlib.import_module(settings[ioc]['module'])
-        self.records = records
         self.delay = settings[ioc]['delay']
         self.now = datetime.datetime.now()
+        ioc_settings = settings[ioc]
+        records = ioc_settings['records']
 
         # Create device instance
-        self.device = self.module.Device(device_name, settings[ioc])
+        self.device = self.module.Device(device_name, ioc_settings)
         self.device.connect()
 
         # Create timestamp PV
@@ -62,8 +63,8 @@ class DeviceIOC():
 
         # Apply record settings, if they exist for the PV
         for name, entry in self.device.pvs.items():
-            if name in self.records:
-                for field, value in self.records[name].items():
+            if name in records:
+                for field, value in records[name].items():
                     setattr(self.device.pvs[name], field, value)
 
     async def loop(self):
@@ -73,23 +74,19 @@ class DeviceIOC():
         if await self.device.do_reads():   # get new readings from device and set into PVs
             self.pv_time.set(datetime.datetime.now().timestamp())   # set time of last successful update
 
-
 def load_settings():
-    """Load device settings and records from YAML settings files.
-    """
+    """Load device settings from YAML settings file.
+    Argument parser allows '-s' to give a different folder, '-i' tells which IOC to run"""
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", help="Settings file folder, default is here.")
     parser.add_argument("-i", help="Name of IOC to start")
     args = parser.parse_args()
     folder = args.s if args.s else '.'
 
-    with open(f'{folder}/settings.yaml') as f:
+    with open(f'{folder}/settings.yaml') as f:  # Load settings from YAML files
         settings = yaml.load(f, Loader=yaml.FullLoader)
     print(f"Loaded device settings from {folder}/settings.yaml.")
-
-    with open(f'{folder}/records.yaml') as f:
-        records = yaml.load(f, Loader=yaml.FullLoader)
-    print(f"Loaded records from {folder}/records.yaml.")
 
     ioc_list = list(settings.keys())
     ioc_list.remove('general')
@@ -105,8 +102,7 @@ def load_settings():
         [print(f"  {x}") for x in ioc_list]
         exit()
 
-    return ioc, settings, records
-
+    return ioc, settings
 
 if __name__ == "__main__":
     asyncio.run(main())
