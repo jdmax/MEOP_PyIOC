@@ -1,43 +1,29 @@
-import telnetlib
 import re
 import time
 from softioc import builder, alarm
+from .telnet_base import TelnetDevice, TelnetConnection
 
 
-class Device():
+class Device(TelnetDevice):
     '''Makes library of PVs needed for Rigol DP832 and provides methods connect them to the device
-
-    Attributes:
-        pvs: dict of Process Variables keyed by name
-        channels: channels of device
     '''
-    def __init__(self, device_name, settings):
-        '''Make PVs needed for this device and put in pvs dict keyed by name
-        '''
-        self.device_name = device_name
-        self.settings = settings
-        self.channels = settings['channels']
-        self.pvs = {}
-        sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
 
-        for channel in settings['channels']:  # set up PVs for each channel
-            if "None" in channel: continue
-            self.pvs[channel+"_VI"] = builder.aIn(channel+"_VI", **sevr)   # Voltage
-            self.pvs[channel+"_CI"] = builder.aIn(channel+"_CI", **sevr)   # Current
+    def _create_pvs(self):
+        """Create magnet-specific PVs for each channel"""
 
-            self.pvs[channel + "_CC"] = builder.aOut(channel + "_CC", on_update_name=self.do_sets, **sevr)
-            self.pvs[channel + "_VC"] = builder.aOut(channel + "_VC", on_update_name=self.do_sets, **sevr)
-
+        for channel in self._skip_none_channels():  # set up PVs for each channel
+            self.pvs[channel+"_VI"] = builder.aIn(channel+"_VI", **self.sevr)   # Voltage
+            self.pvs[channel+"_CI"] = builder.aIn(channel+"_CI", **self.sevr)   # Current
+            self.pvs[channel + "_CC"] = builder.aOut(channel + "_CC", on_update_name=self.do_sets, **self.sevr)
+            self.pvs[channel + "_VC"] = builder.aOut(channel + "_VC", on_update_name=self.do_sets, **self.sevr)
             self.pvs[channel + "_Mode"] = builder.boolOut(channel + "_Mode", on_update_name=self.do_sets)
 
-
-    def connect(self):
-        '''Open connection to device'''
-        try:
-            self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
-            self.read_outs()
-        except Exception as e:
-            print(f"Failed connection on {self.settings['ip']}, {e}")
+    def _create_connection(self):
+        return DeviceConnection(
+            self.settings['ip'],
+            self.settings['port'],
+            self.settings['timeout']
+        )
 
     def read_outs(self):
         """Read and set OUT PVs at the start of the IOC"""
@@ -53,10 +39,6 @@ class Device():
                 print("Read out error on", pv_name)
                 self.reconnect()
 
-    def reconnect(self):
-        del self.t
-        print("Connection failed. Attempting reconnect.")
-        self.connect()
 
     def do_sets(self, new_value, pv):
         """Set PVs values to device"""
@@ -81,54 +63,32 @@ class Device():
     async def do_reads(self):
         '''Match variables to methods in device driver and get reads from device'''
         new_reads = {}
-        ok = True
-        for i, channel in enumerate(self.channels):
-            if "None" in channel: continue
-            try:
-                new_reads[channel+'_VI'], new_reads[channel+'_CI'], power = self.t.read(i+1)
-                new_reads[channel+'_VC'], new_reads[channel+'_CC'] = self.t.read_sp(i+1)
-                new_reads[channel+'_Mode'] = self.t.read_state(i+1)
-            except OSError:
-                self.set_alarm(channel + "_VI")
-                self.reconnect()
-                ok = False
-            else:
-                self.remove_alarm(channel + "_VI")
-        for channel, value in new_reads.items():
-            self.pvs[channel].set(value)
-        return ok
+        try:
+            for i, channel in enumerate(self.channels):
+                if "None" in channel: continue
+                new_reads[channel + '_VI'], new_reads[channel + '_CI'], power = self.t.read(i + 1)
+                new_reads[channel + '_VC'], new_reads[channel + '_CC'] = self.t.read_sp(i + 1)
+                new_reads[channel + '_Mode'] = self.t.read_state(i + 1)
+            for channel, value in new_reads.items():
+                self.pvs[channel].set(value)
 
-    def set_alarm(self, channel):
-        """Set alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=1, alarm=alarm.READ_ALARM)
-
-    def remove_alarm(self, channel):
-        """Remove alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
+            self._handle_read_success()
+            return True
+        except OSError:
+            self._handle_read_error()
+            return False
 
 
-class DeviceConnection():
+
+class DeviceConnection(TelnetConnection):
     '''Handle connection to Rigol DP832 via Telnet.
     '''
 
     def __init__(self, host, port, timeout):
-        '''Open connection to Rigol DP832, required LAN option unlocked.
-        30V/3A on Ch1, Ch2. 5V/3A Ch3.
-        Arguments:
-            host: IP address
-        port: Port of device
-        '''
-        self.host = host
-        self.port = port
-        self.timeout = timeout
+        super().__init__(host, port, timeout)
 
-        try:
-            self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)
-        except Exception as e:
-            print(f"DP832 connection failed on {self.host}: {e}")
-
-        self.read_regex = re.compile('CH\d:\d+V/\dA,(\d+.\d+),(\d+.\d+)')
-        self.read_sp_regex = re.compile('(\d+.\d+),(\d+.\d+),(\d+.\d+)')
+        self.read_regex = re.compile(r'CH\d:\d+V/\dA,(\d+.\d+),(\d+.\d+)')
+        self.read_sp_regex = re.compile(r'(\d+.\d+),(\d+.\d+),(\d+.\d+)')
 
     def read_sp(self, channel):
         '''Read voltage, current measured for given channel (1,2,3).'''

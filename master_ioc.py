@@ -10,21 +10,20 @@ import datetime
 
 async def main():
     """
-    Run an IOC: load settings, create dispatcher, set name, do boilerplate, loop on device coroutine and start interactive interface
+    Run an IOC: load settings, create dispatcher, set name, do boilerplate,
+    loop on device coroutine and start interactive interface
     Device to be set up comes from command line argument choosing option from settings file
     """
-    ioc, settings, records = load_settings()
+    ioc, settings = load_settings()
 
     os.environ['EPICS_CA_ADDR_LIST'] = settings['general']['epics_addr_list']
-    #os.environ['EPICS_CAS_BEACON_ADDR_LIST'] = settings['general']['epics_beacon_addr_list']
     os.environ['EPICS_CA_AUTO_ADDR_LIST'] = 'NO'
-    #os.environ['EPICS_CAS_AUTO_BEACON_ADDR_LIST'] = 'NO'
 
     dispatcher = asyncio_dispatcher.AsyncioDispatcher()
     device_name = settings['general']['prefix']
     builder.SetDeviceName(device_name)
 
-    d = DeviceIOC(device_name, ioc, settings, records)
+    d = DeviceIOC(device_name, ioc, settings)
     builder.LoadDatabase()
     softioc.iocInit(dispatcher)
 
@@ -40,40 +39,43 @@ class DeviceIOC():
     """Set up PVs for a given device IOC, run thread to interact with device
     """
 
-    def __init__(self, device_name, ioc, settings, records):
+    def __init__(self, device_name, ioc, settings):
         '''
         Arguments:
             device_name: name of device for PV prefix
             settings: dict of device settings
             records: dict of record settings
         '''
-
+        # Import the device module
         self.module = importlib.import_module(settings[ioc]['module'])
-        self.records = records
         self.delay = settings[ioc]['delay']
         self.now = datetime.datetime.now()
+        ioc_settings = settings[ioc]
+        records = ioc_settings.get('records', {}) # sets records from settings file, if they exist
 
-        self.device = self.module.Device(device_name, settings[ioc])
+        # Create device instance
+        self.device = self.module.Device(device_name, ioc_settings)
         self.device.connect()
+
+        # Create timestamp PV
         self.pv_time = builder.aIn(f"MAN:{ioc}_time")
         self.pv_time.set(datetime.datetime.now().timestamp())
 
-        for name, entry in self.device.pvs.items():  # set the attributes of the PV (optional)
-            if name in self.records:
-                for field, value in self.records[name].items():
+        # Apply record settings, if they exist for the PV
+        for name, entry in self.device.pvs.items():
+            if name in records:
+                for field, value in records[name].items():
                     setattr(self.device.pvs[name], field, value)
 
     async def loop(self):
-        """Read indicator PVS from controller channels. Delay time between measurements is in seconds.
-        If read is successful, set timestamp PV for IOC.
-         """
+        """Read indicator PVS from controller channels.
+        """
         await asyncio.sleep(self.delay)
-        if await self.device.do_reads():  # get new readings from device and set into PVs
+        if await self.device.do_reads():   # get new readings from device and set into PVs
             self.pv_time.set(datetime.datetime.now().timestamp())   # set time of last successful update
 
-
 def load_settings():
-    """Load device settings and records from YAML settings files.
+    """Load device settings from YAML settings file.
     Argument parser allows '-s' to give a different folder, '-i' tells which IOC to run"""
 
     parser = argparse.ArgumentParser()
@@ -85,10 +87,6 @@ def load_settings():
     with open(f'{folder}/settings.yaml') as f:  # Load settings from YAML files
         settings = yaml.load(f, Loader=yaml.FullLoader)
     print(f"Loaded device settings from {folder}/settings.yaml.")
-
-    with open(f'{folder}/records.yaml') as f:  # Load settings from YAML files
-        records = yaml.load(f, Loader=yaml.FullLoader)
-    print(f"Loaded records from {folder}/records.yaml.")
 
     ioc_list = list(settings.keys())
     ioc_list.remove('general')
@@ -104,8 +102,7 @@ def load_settings():
         [print(f"  {x}") for x in ioc_list]
         exit()
 
-    return ioc, settings, records
-
+    return ioc, settings
 
 if __name__ == "__main__":
     asyncio.run(main())

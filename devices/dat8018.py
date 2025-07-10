@@ -1,101 +1,18 @@
-from pyModbusTCP.client import ModbusClient
-from softioc import builder, alarm
+from .modbus_base import ModbusDevice, ModbusConnection
+from softioc import builder
 
-class Device():
-    """Makes library of PVs needed for DAT8018 TC Reader and provides methods connect them to the device
 
-    Attributes:
-        pvs: dict of Process Variables keyed by name
-        channels: channels of device
-    """
+class Device(ModbusDevice):
+    """Datexel 8018 Thermocouple Reader"""
 
     def __init__(self, device_name, settings):
-        '''Make PVs needed for this device and put in pvs dict keyed by name
-        '''
-        self.device_name = device_name
-        self.settings = settings
-        self.channels = settings['channels']
-        self.pvs = {}
-        self.new_reads = {}
-        sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
+        super().__init__(device_name, settings)
 
-        for channel in settings['channels']:  # set up PVs for each channel, calibrations are values of dict
-            if "None" in channel: continue
-            self.pvs[channel] = builder.aIn(channel, **sevr)
+    def _create_pvs(self):
+        """Create temperature input PVs"""
+        for channel in self._skip_none_channels():
+            self.pvs[channel] = builder.aIn(channel, **self.sevr)
 
-    def connect(self):
-        '''Open connection to device'''
-        try:
-            self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
-        except Exception as e:
-            print(f"Failed connection on {self.settings['ip']}, {e}")
-
-    def reconnect(self):
-        del self.t
-        print("Connection failed. Attempting reconnect.")
-        self.connect()
-
-    def do_sets(self, new_value, pv):
-        """8018 has no sets"""
-        pass
-
-    async def do_reads(self):
-        '''Match variables to methods in device driver and get reads from device'''
-        try:
-            readings = self.t.read_all()
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.pvs[channel].set(readings[i])
-                self.remove_alarm(channel)
-        except OSError as e:
-            print(e)
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.set_alarm(channel)
-            await self.reconnect()
-        except TypeError as e:
-            print(e)
-            await self.reconnect()
-        except AttributeError as e:
-            print(e)
-            await self.reconnect()
-        else:
-            return True
-
-    def set_alarm(self, channel):
-        """Set alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=1, alarm=alarm.READ_ALARM)
-
-    def remove_alarm(self, channel):
-        """Remove alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
-
-class DeviceConnection():
-    '''Handle connection to Datexel 8018.
-    '''
-
-    def __init__(self, host, port, timeout):
-        '''Open connection to DAT8018
-        Arguments:
-            host: IP address
-            port: Port of device
-            timeout: Telnet timeout in secs
-        '''
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-
-        try:
-            self.m =  ModbusClient(host=self.host, port=int(self.port), unit_id=1, auto_open=True)
-        except Exception as e:
-            print(f"Datexel 8018 connection failed on {self.host}: {e}")
-
-    def read_all(self):
-        '''Read all channels.'''
-        try:
-            values = self.m.read_input_registers(40,8)  # read all 8 channels starting at 40
-            return [x/10 for x in values]
-
-        except Exception as e:
-            print(f"Datexel 8018 read failed on {self.host}: {e}")
-            raise OSError('8018 read')
+    def _process_reading(self, channel, raw_value):
+        """Convert raw value to temperature (divide by 10)"""
+        return raw_value / 10

@@ -1,41 +1,28 @@
 # J. Maxwell 2023
-import telnetlib
 import re
-from softioc import builder, alarm
+from softioc import builder
+from .telnet_base import TelnetDevice, TelnetConnection
 
 
-class Device():
+class Device(TelnetDevice):
     '''Makes library of PVs needed for Scientific Instruments 9700 and provides methods connect them to the device
 
-    Attributes:
-        pvs: dict of Process Variables keyed by name
-        channels: channels of device
     '''
-    def __init__(self, device_name, settings):
-        '''Make PVs needed for this device and put in pvs dict keyed by name
-        '''
-        self.device_name = device_name
-        self.settings = settings
-        self.channels = settings['channels']
-        self.pvs = {}
-        sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
-        self.mode_choice = ['STOP', 'NORMAL', 'PROGRAM', 'AUTO_TUNE', 'FIXED']
 
-        for channel in settings['channels']:  # set up PVs for each channel
-            if "None" in channel: continue
-            self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **sevr)  # Voltage
-            self.pvs[channel + "_Heater"] = builder.aIn(channel + "_Heater", **sevr)  # Voltage
+    def _create_pvs(self):
+        mode_choice = ['STOP', 'NORMAL', 'PROGRAM', 'AUTO_TUNE', 'FIXED']
+        for channel in self._skip_none_channels():  # set up PVs for each channel
+            self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **self.sevr)  # Voltage
+            self.pvs[channel + "_Heater"] = builder.aIn(channel + "_Heater", **self.sevr)  # Voltage
+            self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **self.sevr)
+            self.pvs[channel + "_Mode"] = builder.mbbOut(channel + "_Mode", *mode_choice, on_update_name=self.do_sets)
 
-            self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **sevr)
-            self.pvs[channel + "_Mode"] = builder.mbbOut(channel + "_Mode", *self.mode_choice, on_update_name=self.do_sets)
-
-    def connect(self):
-        '''Open connection to device'''
-        try:
-            self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
-            self.read_outs()
-        except Exception as e:
-            print(f"Failed connection on {self.settings['ip']}, {e}")
+    def _create_connection(self):
+        return DeviceConnection(
+            self.settings['ip'],
+            self.settings['port'],
+            self.settings['timeout']
+        )
 
     def read_outs(self):
         """Read and set OUT PVs at the start of the IOC"""
@@ -48,11 +35,6 @@ class Device():
             except OSError:
                 print("Read out error on", pv_name)
                 self.reconnect()
-
-    def reconnect(self):
-        del self.t
-        print("Connection failed. Attempting reconnect.")
-        self.connect()
 
     def do_sets(self, new_value, pv):
         """Set PVs values to device"""
@@ -77,47 +59,25 @@ class Device():
         try:
             temps = self.t.read_all()
             setpoint, heater, mode = self.t.read_status()
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.pvs[channel+"_TI"].set(temps[i])
-                self.pvs[channel+"_Heater"].set(heater)
-                self.remove_alarm(channel+"_TI")
-        except OSError:
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.set_alarm(channel+"_TI")
-            self.reconnect()
-        else:
+            for i, channel in enumerate(self._skip_none_channels()):
+                self.pvs[channel + "_TI"].set(temps[i])
+                self.pvs[channel + "_Heater"].set(heater)
+            self._handle_read_success()
             return True
-
-    def set_alarm(self, channel):
-        """Set alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=1, alarm=alarm.READ_ALARM)
-
-    def remove_alarm(self, channel):
-        """Remove alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
+        except OSError:
+            self._handle_read_error()
+            return False
 
 
-class DeviceConnection():
+
+class DeviceConnection(TelnetConnection):
     '''Handle connection to SI9700 via serial over ethernet.
     '''
-    def __init__(self, host, port, timeout):        
-        '''Open connection to SI9700
-        Arguments:
-            host: IP address
-            port: Port of device
-            timeout: Telnet timeout in secs
-        '''
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-        
-        try:
-            self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)                  
-        except Exception as e:
-            print(f"SI9700 connection failed on {self.host}: {e}")
 
+    def __init__(self, host, port, timeout):
+        super().__init__(host, port, timeout)
+        '''Define regex
+        '''
         self.read_regex = re.compile(b'TALL\s(\d+.\d{4}),(\d+.\d{4})')
         self.status_regex = re.compile(b'STA\s(\d+.\d+),(\d+.\d+),(\d),(\d),(\d),(\d),(\d)')
         self.set_regex = re.compile(b'SET\s(\d+.\d+)')
@@ -129,7 +89,6 @@ class DeviceConnection():
             i, match, data = self.tn.expect([self.read_regex], timeout=self.timeout)
             # print(data)
             return [float(x) for x in match.groups()]
-
         except Exception as e:
             print(f"SI9700 read failed on {self.host}: {e}")
             raise OSError('SI9700 read')
@@ -137,13 +96,12 @@ class DeviceConnection():
     def read_status(self):
         '''Read status. Returns setpoint, heater percentage and mode. There is no 0 mode, so subtract 1.'''
         try:
-            self.tn.write(bytes(f"STA?\r",'ascii'))     # 0 means it will return all channels
+            self.tn.write(bytes(f"STA?\r", 'ascii'))  # 0 means it will return all channels
             i, match, data = self.tn.expect([self.status_regex], timeout=self.timeout)
-            #print(data)
+            # print(data)
             setpoint, heater, mode, alarm, gui, control, zone = match.groups()
-            #print(float(setpoint), float(heater), int(mode)-1)
-            return float(setpoint), float(heater), int(mode)-1
-
+            # print(float(setpoint), float(heater), int(mode)-1)
+            return float(setpoint), float(heater), int(mode) - 1
         except Exception as e:
             print(f"SI9700 status read failed on {self.host}: {e}")
             raise OSError('SI9700 status read')
@@ -151,11 +109,10 @@ class DeviceConnection():
     def set_setpoint(self, value):
         '''Sets setpoint, returns result'''
         try:
-            self.tn.write(bytes(f"SET {value}\r",'ascii'))
+            self.tn.write(bytes(f"SET {value}\r", 'ascii'))
             setpoint, heater, mode = self.read_status()
-            #print("sp",setpoint)
+            # print("sp",setpoint)
             return setpoint
-
         except Exception as e:
             print(f"SI9700 set failed on {self.host}: {e}")
             raise OSError('SI9700 set')
@@ -163,11 +120,10 @@ class DeviceConnection():
     def set_mode(self, value):
         '''Sets mode, returns result'''
         try:
-            self.tn.write(bytes(f"MODE {value + 1}\r",'ascii'))
+            self.tn.write(bytes(f"MODE {value + 1}\r", 'ascii'))
             setpoint, heater, mode = self.read_status()
-            #print("mode",mode)
+            # print("mode",mode)
             return mode
-
         except Exception as e:
             print(f"SI9700 set failed on {self.host}: {e}")
             raise OSError('SI9700 set')

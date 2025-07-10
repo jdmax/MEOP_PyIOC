@@ -1,9 +1,9 @@
-import telnetlib
 import re
-from softioc import builder, alarm
+from softioc import builder
+from .telnet_base import TelnetDevice, TelnetConnection
 
 
-class Device():
+class Device(TelnetDevice):
     """Makes library of PVs needed for LS336 and provides methods connect them to the device
 
     Attributes:
@@ -11,48 +11,35 @@ class Device():
         channels: channels of device
     """
 
-    def __init__(self, device_name, settings):
-        '''Make PVs needed for this device and put in pvs dict keyed by name
-        '''
-        self.device_name = device_name
-        self.settings = settings
-        self.channels = settings['channels']
-        self.pvs = {}
-        sevr = {'HHSV': 'MAJOR', 'HSV': 'MINOR', 'LSV': 'MINOR', 'LLSV': 'MAJOR', 'DISP': '0'}
+    def _create_pvs(self):
+        """Create analog input PVs with calibration info"""
 
         mode_list = [['Off', 0], ['Closed Loop', 0], ['Zone', 0], ['Open Loop', 0]]
         range_list = [['Off', 0], ['Low', 0], ['Med', 0], ['High', 0]]
 
-        for channel in settings['channels']:  # set up PVs for each channel
+        for channel in self._skip_none_channels():  # set up PVs for each channel
             if "_TI" in channel:
-                self.pvs[channel] = builder.aIn(channel, **sevr)
-            elif "None" in channel:
-                pass
+                self.pvs[channel] = builder.aIn(channel, **self.sevr)
             else:
-                self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **sevr)
-                self.pvs[channel + "_Heater"] = builder.aIn(channel + "_Heater", **sevr)
+                self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **self.sevr)
+                self.pvs[channel + "_Heater"] = builder.aIn(channel + "_Heater", **self.sevr)
 
-                self.pvs[channel + "_Manual"] = builder.aOut(channel + "_Manual", on_update_name=self.do_sets, **sevr)
+                self.pvs[channel + "_Manual"] = builder.aOut(channel + "_Manual", on_update_name=self.do_sets, **self.sevr)
                 self.pvs[channel + "_kP"] = builder.aOut(channel + "_kP", on_update_name=self.do_sets)
                 self.pvs[channel + "_kI"] = builder.aOut(channel + "_kI", on_update_name=self.do_sets)
                 self.pvs[channel + "_kD"] = builder.aOut(channel + "_kD", on_update_name=self.do_sets)
-                self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **sevr)
+                self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **self.sevr)
 
                 self.pvs[channel + "_Mode"] = builder.mbbOut(channel + "_Mode", *mode_list, on_update_name=self.do_sets)
                 self.pvs[channel + "_Range"] = builder.mbbOut(channel + "_Range", *range_list,
                                                               on_update_name=self.do_sets)
 
-    def connect(self):
-        '''Open connection to device'''
-        try:
-            self.t = DeviceConnection(self.settings['ip'], self.settings['port'], self.settings['timeout'])
-        except Exception as e:
-            print(f"Failed connection on {self.settings['ip']}, {e}")
-
-    def reconnect(self):
-        del self.t
-        print("Connection failed. Attempting reconnect.")
-        self.connect()
+    def _create_connection(self):
+        return DeviceConnection(
+            self.settings['ip'],
+            self.settings['port'],
+            self.settings['timeout']
+        )
 
     def do_sets(self, new_value, pv):
         '''If PV has changed, find the correct method to set it on the device'''
@@ -90,7 +77,6 @@ class Device():
                 if "None" in channel: continue
                 if "_TI" in channel:
                     self.pvs[channel].set(temps[i])
-                    self.remove_alarm(channel)
                 else:
                     self.pvs[channel + '_TI'].set(temps[i])
                     self.remove_alarm(channel+'_TI')
@@ -103,50 +89,26 @@ class Device():
                     self.pvs[channel + '_Range'].set(int(self.t.read_range(i + 1)))
                     self.pvs[channel + '_SP'].set(self.t.read_setpoint(i + 1))
                     self.pvs[channel + '_Manual'].set(self.t.read_man_heater(i + 1))
-        except OSError:
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                if "_TI" in channel:   # setting read error on TI only
-                    self.set_alarm(channel)
-                else:
-                    self.set_alarm(channel + '_TI')
-            self.reconnect()
-        else:
+            self._handle_read_success()
             return True
-
-    def set_alarm(self, channel):
-        """Set alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=1, alarm=alarm.READ_ALARM)
-
-    def remove_alarm(self, channel):
-        """Remove alarm and severity for channel"""
-        self.pvs[channel].set_alarm(severity=0, alarm=alarm.NO_ALARM)
+        except OSError:
+            self._handle_read_error()
+            return False
 
 
-class DeviceConnection():
-    '''Handle connection to Lakeshore Model 336 via Telnet. 
+class DeviceConnection(TelnetConnection):
+    '''Handle connection to Lakeshore Model 336 via Telnet.
     '''
 
     def __init__(self, host, port, timeout):
-        '''Open connection to Lakeshore 218
-        Arguments:
-            host: IP address
-        port: Port of device
+        super().__init__(host, port, timeout)
+        '''Define regex
         '''
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-
-        try:
-            self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)
-        except Exception as e:
-            print(f"LS336 connection failed on {self.host}: {e}")
-
-        self.read_regex = re.compile('([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+)')
-        self.pid_regex = re.compile('([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+)')
-        self.out_regex = re.compile('(\d),(\d),(\d)')
-        self.range_regex = re.compile('(\d)')
-        self.setp_regex = re.compile('([+-]\d+.\d+)')
+        self.read_regex = re.compile(r'([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+)')
+        self.pid_regex = re.compile(r'([+-]\d+.\d+),([+-]\d+.\d+),([+-]\d+.\d+)')
+        self.out_regex = re.compile(r'(\d),(\d),(\d)')
+        self.range_regex = re.compile(r'(\d)')
+        self.setp_regex = re.compile(r'([+-]\d+.\d+)')
         # self.set_regex = re.compile('SP(\d) VALUE: (\d+.\d+)')
         # self.ok_response_regex = re.compile(b'!a!o!\s\s')
 

@@ -149,8 +149,8 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.any_regex], timeout=self.timeout)
             return str(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 set remote failed on {self.host}: {e}")
-            raise OSError('CS-4 set')
+            print(f"4g set remote failed on {self.host}: {e}")
+            raise OSError('4g set')
 
     def read_ulim(self):
         """Read upper limit"""

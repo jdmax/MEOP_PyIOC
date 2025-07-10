@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2024-06-11 15:19:11 by poltar-->
+<!--Saved on 2025-07-10 12:15:59 by poltar-->
 <display version="2.0.0">
   <name>Magnet Controls</name>
   <width>700</width>
@@ -18,7 +18,7 @@
   </widget>
   <widget type="bool_button" version="2.0.0">
     <name>Boolean Button</name>
-    <pv_name>ca://TGT:MEOP:MAN:cs4_magnet_control</pv_name>
+    <pv_name>ca://TGT:MEOP:MAN:cm4g_magnet_control</pv_name>
     <x>440</x>
     <y>50</y>
     <width>90</width>
@@ -33,7 +33,7 @@
   </widget>
   <widget type="textupdate" version="2.0.0">
     <name>Text Update_4</name>
-    <pv_name>ca://TGT:MEOP:MAN:cs4_magnet_hb</pv_name>
+    <pv_name>ca://TGT:MEOP:MAN:cm4g_magnet_hb</pv_name>
     <x>560</x>
     <y>50</y>
   </widget>

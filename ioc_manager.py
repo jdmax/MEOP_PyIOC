@@ -121,6 +121,7 @@ class IOCManager:
         Start screen to run ioc, then run ioc. Get PV names from IOC after run.
         """
         name = pv_name.replace('_control', '')  # remove suffix from pv name to name screen
+
         self.st = StartThread(self, name, self.screens)
         self.st.daemon = True
         self.st.start()
@@ -192,7 +193,6 @@ class StartThread(Thread):
         Start screen to run ioc, then run ioc. Wait until started, then get PV names from IOC after run.
         '''
         screen = Screen(self.name, True)
-
         screen.send_commands('bash')
         screen.send_commands(f'python master_ioc.py -i {self.name}')
         screen.enable_logs(f"{self.parent.settings['general']['log_dir']}/{self.name}")
