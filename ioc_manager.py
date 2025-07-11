@@ -128,7 +128,7 @@ class IOCManager:
                     'autorestart': 'false',
                     'stdout_logfile': f'%(here)s/logs/{name}.log',
                     'stderr_logfile': f'%(here)s/logs/{name}_error.log',
-                    'environment': 'PATH="/usr/local/bin:/usr/bin:/bin",PYTHONUNBUFFERED="1"'
+                    'environment': 'PATH="%(here)s/../venv/bin",PYTHONUNBUFFERED="1"'
                 }
 
         # Write updated config

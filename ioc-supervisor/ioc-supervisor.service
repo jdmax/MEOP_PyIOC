@@ -1,0 +1,38 @@
+# ioc-supervisor/ioc-supervisor.service
+# Systemd service file for IOC Supervisor Manager
+#
+# Installation:
+# 1. Copy this file to /etc/systemd/system/ioc-supervisor.service
+# 2. Update the paths below to match your installation
+# 3. sudo systemctl daemon-reload
+# 4. sudo systemctl enable ioc-supervisor
+# 5. sudo systemctl start ioc-supervisor
+
+[Unit]
+Description=IOC Supervisor Manager
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+Group=YOUR_GROUPNAME
+WorkingDirectory=/path/to/your/project/ioc-supervisor
+Environment=PATH=/path/to/your/project/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/path/to/your/project/venv/bin/python supervisor_ioc_manager.py
+ExecStop=/path/to/your/project/ioc-supervisor/supervisor_control.sh stop
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ioc-supervisor
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/path/to/your/project
+
+[Install]
+WantedBy=multi-user.target
