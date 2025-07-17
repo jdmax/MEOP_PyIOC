@@ -1,7 +1,8 @@
-PyYAML
-softioc
-aioca
+PyYAML~=6.0.2
+softioc~=4.6.1
+aioca~=1.8.1
 numpy
 screenutils
-pyModbusTCP
+pyModbusTCP~=0.3.0
 simple_pid
+supervisor
