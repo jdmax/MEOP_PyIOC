@@ -3,6 +3,9 @@
 
 cd "$(dirname "$0")"
 
+# Source the virtual environment from parent directory
+source ../venv/bin/activate
+
 SUPERVISOR_CONFIG="supervisord.conf"
 SUPERVISOR_PID="supervisord.pid"
 MANAGER_PID="supervisor_manager.pid"
