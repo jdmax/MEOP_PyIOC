@@ -19,7 +19,7 @@ User=YOUR_USERNAME
 Group=YOUR_GROUPNAME
 WorkingDirectory=/path/to/your/project/ioc-supervisor
 Environment=PATH=/path/to/your/project/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/path/to/your/project/venv/bin/python supervisor_ioc_manager.py
+ExecStart=/path/to/your/project/venv/bin/python ioc_manager.py
 ExecStop=/path/to/your/project/ioc-supervisor/supervisor_control.sh stop
 Restart=always
 RestartSec=10

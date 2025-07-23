@@ -1,5 +1,4 @@
 #!/bin/bash
-# ioc-supervisor/install_systemd_service.sh
 # Script to install the IOC supervisor as a systemd service
 
 cd "$(dirname "$0")"
@@ -46,7 +45,7 @@ User=$CURRENT_USER
 Group=$CURRENT_GROUP
 WorkingDirectory=$SUPERVISOR_DIR
 Environment=PATH=$VENV_PATH/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=$VENV_PATH/bin/python supervisor_ioc_manager.py
+ExecStart=$VENV_PATH/bin/python ioc_manager.py
 ExecStop=$SUPERVISOR_DIR/supervisor_control.sh stop
 Restart=always
 RestartSec=10

@@ -1,5 +1,4 @@
 #!/bin/bash
-# ioc-supervisor/supervisor_control.sh
 # Helper script to manage the supervisor system
 
 cd "$(dirname "$0")"

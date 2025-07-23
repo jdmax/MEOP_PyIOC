@@ -1,5 +1,4 @@
-# ioc-supervisor/supervisor_ioc_manager.py
-# J. Maxwell 2023 - Modified for supervisord
+# J. Maxwell 2023 - Modified for supervisord 2025
 import os
 import sys
 import yaml

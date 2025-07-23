@@ -1,5 +1,4 @@
 #!/bin/bash
-# ioc-supervisor/start_supervisor_manager.sh
 
 # Change to the script directory
 cd "$(dirname "$0")"
@@ -13,7 +12,7 @@ mkdir -p logs
 # Check for daemon flag
 if [ "$1" = "--daemon" ] || [ "$1" = "-d" ]; then
     echo "Starting Supervisor IOC Manager as daemon..."
-    nohup python supervisor_ioc_manager.py > logs/supervisor_manager.log 2>&1 &
+    nohup python ioc_manager.py > logs/supervisor_manager.log 2>&1 &
     echo $! > supervisor_manager.pid
     echo "Started with PID $(cat supervisor_manager.pid)"
     echo "Log: $(pwd)/logs/supervisor_manager.log"
@@ -31,5 +30,5 @@ else
     echo "Starting Supervisor IOC Manager in foreground..."
     echo "Use --daemon or -d to run as background daemon"
     echo "Use --stop-daemon to stop background daemon"
-    python supervisor_ioc_manager.py
+    python ioc_manager.py
 fi

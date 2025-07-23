@@ -98,7 +98,7 @@ The EPICS PV interface remains exactly the same:
 
 ```
 ioc-supervisor/
-├── supervisor_ioc_manager.py      # Main supervisor-based manager
+├── ioc_manager.py      # Main supervisor-based manager
 ├── start_supervisor_manager.sh    # Startup script with daemon options
 ├── supervisor_control.sh          # Management script
 ├── install_systemd_service.sh     # Systemd service installer
