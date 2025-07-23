@@ -9,56 +9,74 @@ source ../venv/bin/activate
 # Create logs directory if it doesn't exist
 mkdir -p logs
 
-# Load settings to get EPICS configuration
-SETTINGS_FILE="../settings.yaml"
+SCREEN_NAME="ioc-supervisor"
 
-# Extract EPICS_CA_ADDR_LIST from settings.yaml
-EPICS_CA_ADDR_LIST=$(python3 -c "
-import yaml
-with open('$SETTINGS_FILE') as f:
-    settings = yaml.safe_load(f)
-    print(settings['general']['epics_addr_list'])
-" 2>/dev/null || echo "127.255.255.255")
+case "$1" in
+    --daemon|-d)
+        echo "Starting Supervisor IOC Manager in screen session..."
 
-# Set up EPICS environment variables for daemon mode
-export EPICS_CA_ADDR_LIST="$EPICS_CA_ADDR_LIST"
-export EPICS_CA_AUTO_ADDR_LIST="NO"
-export EPICS_CA_SERVER_PORT="5064"
-export EPICS_CA_REPEATER_PORT="5065"
-export EPICS_CA_MAX_ARRAY_BYTES="16384"
+        # Check if screen session already exists
+        if screen -list | grep -q "$SCREEN_NAME"; then
+            echo "Screen session '$SCREEN_NAME' already exists"
+            echo "Use --stop-daemon to stop it first"
+            exit 1
+        fi
 
-# Check for daemon flag
-if [ "$1" = "--daemon" ] || [ "$1" = "-d" ]; then
-    echo "Starting Supervisor IOC Manager as daemon..."
-    echo "EPICS_CA_ADDR_LIST: $EPICS_CA_ADDR_LIST"
+        # Start in screen session with logging
+        screen -dmS "$SCREEN_NAME" bash -c "
+            source ../venv/bin/activate
+            echo 'Starting IOC Manager in screen session at \$(date)' | tee logs/supervisor_manager.log
+            python ioc_manager.py 2>&1 | tee -a logs/supervisor_manager.log
+        "
 
-    # Start with explicit environment preservation
-    nohup env \
-        EPICS_CA_ADDR_LIST="$EPICS_CA_ADDR_LIST" \
-        EPICS_CA_AUTO_ADDR_LIST="NO" \
-        EPICS_CA_SERVER_PORT="5064" \
-        EPICS_CA_REPEATER_PORT="5065" \
-        EPICS_CA_MAX_ARRAY_BYTES="16384" \
-        python ioc_manager.py > logs/supervisor_manager.log 2>&1 &
+        echo "Started in screen session '$SCREEN_NAME'"
+        echo "View with: screen -r $SCREEN_NAME"
+        echo "Detach with: Ctrl-A, D"
+        echo "Log: $(pwd)/logs/supervisor_manager.log"
 
-    echo $! > supervisor_manager.pid
-    echo "Started with PID $(cat supervisor_manager.pid)"
-    echo "Log: $(pwd)/logs/supervisor_manager.log"
+        # Wait a moment and check if the session is running
+        sleep 2
+        if screen -list | grep -q "$SCREEN_NAME"; then
+            echo "Screen session is running successfully"
+        else
+            echo "Warning: Screen session may have failed to start"
+        fi
+        ;;
 
-elif [ "$1" = "--stop-daemon" ]; then
-    if [ -f supervisor_manager.pid ]; then
-        PID=$(cat supervisor_manager.pid)
-        echo "Stopping daemon with PID $PID..."
-        kill $PID 2>/dev/null
-        rm -f supervisor_manager.pid
-        echo "Daemon stopped"
-    else
-        echo "No daemon PID file found"
-    fi
-else
-    echo "Starting Supervisor IOC Manager in foreground..."
-    echo "Use --daemon or -d to run as background daemon"
-    echo "Use --stop-daemon to stop background daemon"
-    echo "EPICS_CA_ADDR_LIST: $EPICS_CA_ADDR_LIST"
-    python ioc_manager.py
-fi
+    --stop-daemon)
+        echo "Stopping screen session '$SCREEN_NAME'..."
+        if screen -list | grep -q "$SCREEN_NAME"; then
+            screen -S "$SCREEN_NAME" -X quit
+            echo "Screen session stopped"
+        else
+            echo "No screen session '$SCREEN_NAME' found"
+        fi
+        ;;
+
+    --attach)
+        echo "Attaching to screen session '$SCREEN_NAME'..."
+        if screen -list | grep -q "$SCREEN_NAME"; then
+            screen -r "$SCREEN_NAME"
+        else
+            echo "No screen session '$SCREEN_NAME' found"
+            echo "Start one with: $0 --daemon"
+        fi
+        ;;
+
+    --status)
+        echo "Screen sessions:"
+        screen -list | grep "$SCREEN_NAME" || echo "No IOC supervisor screen session found"
+        ;;
+
+    *)
+        echo "Starting Supervisor IOC Manager in foreground..."
+        echo ""
+        echo "Options:"
+        echo "  --daemon      Start in background screen session"
+        echo "  --stop-daemon Stop background screen session"
+        echo "  --attach      Attach to background session"
+        echo "  --status      Show screen session status"
+        echo ""
+        python ioc_manager.py
+        ;;
+esac
