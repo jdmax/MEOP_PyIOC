@@ -108,11 +108,6 @@ case "$1" in
         fi
         ;;
 
-    install-service)
-        echo "Installing systemd service..."
-        ./install_systemd_service.sh
-        ;;
-
     screen-list)
         echo "All screen sessions:"
         screen -list
@@ -138,7 +133,6 @@ case "$1" in
         echo "  status        - Show status of screen session and IOCs"
         echo "  attach        - Attach to the background screen session"
         echo "  logs          - Show available logs or tail specific log"
-        echo "  install-service - Install systemd service"
         echo "  screen-list   - List all screen sessions"
         echo "  clean         - Clean all supervisor files and logs"
         echo ""
