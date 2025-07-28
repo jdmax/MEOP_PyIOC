@@ -11,6 +11,7 @@ archiver:
   module: 'devices.archiver'
   autostart: True
   archive_path: 'archive'  # Directory to store archived data
+  settings_file: 'settings.yaml'  # Path to settings file (optional)
   deadband: 0.01  # 1% relative change threshold
   time_increment: 30  # Force write every 5 minutes even if no change
   delay: 5  # Delay between status updates

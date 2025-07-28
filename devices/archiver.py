@@ -74,11 +74,11 @@ class Device(BaseDevice):
 
         # Control PVs
         self.pvs['Archive_Enable'] = builder.boolOut('Archive_Enable',
-                                             on_update_name=self.toggle_archiving)
+                                             on_update=self.toggle_archiving)
         self.pvs['Archive_Deadband'] = builder.aOut('Archive_Deadband',
-                                            on_update_name=self.update_deadband)
+                                            on_update=self.update_deadband)
         self.pvs['Archive_Time_Increment'] = builder.aOut('Archive_Time_Increment',
-                                                  on_update_name=self.update_time_increment)
+                                                  on_update=self.update_time_increment)
 
         # Initialize values
         self.pvs['Archive_Status'].set(0)  # Stopped
