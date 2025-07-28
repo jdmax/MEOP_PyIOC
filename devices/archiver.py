@@ -195,6 +195,19 @@ class Device(BaseDevice):
         self.pvs['Archive_Status'].set(0)  # Stopped
         print("Archiver stopped")
 
+    async def _ping_pv(self, pv, name, ioc_list):
+        """Run a caget and return status"""
+        try:
+            status = await aioca.caget(pv)
+            print("stat",status)
+            if status == 1:  # Running
+                ioc_list.append(name)
+                print("inside method",ioc_list)
+        except Exception as e:
+            print("Error looking for control PV:", e)
+            status = 0
+        return
+
     async def _discover_pvs(self):
         """Discover PVs from running IOCs"""
         pv_list = []
@@ -209,19 +222,14 @@ class Device(BaseDevice):
             # List all IOCs that are running
             ioc_list = []
             prefix = self.full_settings['general']['prefix']
-
+            group = []
             for name in self.full_settings.keys():
                 if name in ['general', 'archiver']:
                     continue
-                try:
-                    print(f"{prefix}:MAN:{name}_control",name)
-                    status = await aioca.caget(f"{prefix}:MAN:{name}_control")
-                    print("stat",status)
-                    if status == 1:  # Running
-                        ioc_list.append(name)
-                    print("list",ioc_list)
-                except Exception as e:
-                    print("Error looking for control PV:", e)
+                group.append(self._ping_pv(f"{prefix}:MAN:{name}_control",name,ioc_list))
+
+            await asyncio.gather(*group)  # Run group concurrently
+            print("list",ioc_list)
 
             # For each running IOC, get its PVs
             print(f"Archiver found {len(ioc_list)} running IOCs: {', '.join(ioc_list)}")
