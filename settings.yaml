@@ -7,6 +7,27 @@ general:
   epics_addr_list: '127.255.255.255'  # On experimental equipment network
   #epics_beacon_addr_list: '127.255.255.255'
   delay: 0.5
+archiver:
+  module: 'devices.archiver'
+  autostart: True
+  archive_path: 'archive'  # Directory to store archived data
+  deadband: 0.01  # 1% relative change threshold
+  time_increment: 30  # Force write every 5 minutes even if no change
+  delay: 5  # Delay between status updates
+  channels:
+    - Archive  # This is a dummy
+  pv_patterns:  # Patterns to include (empty = all PVs)
+    - '_TI'     # Temperature indicators
+    - '_PI'     # Pressure indicators
+    - '_CI'     # Current indicators
+    - '_VI'     # Voltage indicators
+    - '_LI'     # Level indicators
+    - '_SP'     # Setpoints
+    - '_Heater' # Heater values
+  exclude_patterns:  # Patterns to exclude
+    - ':MAN:'   # Don't archive IOC manager PVs
+    - '_hb'     # Don't archive heartbeat PVs
+    - '_control' # Don't archive control PVs
 pfeiffer-26x_1:
   module: 'devices.tpg_26x'
   autostart: True
