@@ -27,10 +27,10 @@ class Device(BaseDevice):
         # Create archive directory
         self.archive_path.mkdir(parents=True, exist_ok=True)
 
+        super().__init__(device_name, settings)
         # Load full settings for PV discovery
         self._load_full_settings()
 
-        super().__init__(device_name, settings)
 
     def _load_full_settings(self):
         """Load the complete settings.yaml file for PV discovery"""
@@ -48,7 +48,6 @@ class Device(BaseDevice):
                     './settings.yaml',
                     Path(__file__).parent.parent / 'settings.yaml'
                 ]
-
             self.full_settings = None
             for path in settings_paths:
                 if Path(path).exists():
@@ -215,11 +214,14 @@ class Device(BaseDevice):
                 if name in ['general', 'archiver']:
                     continue
                 try:
+                    print(f"{prefix}:MAN:{name}_control",name)
                     status = await aioca.caget(f"{prefix}:MAN:{name}_control")
+                    print("stat",status)
                     if status == 1:  # Running
                         ioc_list.append(name)
-                except:
-                    pass
+                    print("list",ioc_list)
+                except Exception as e:
+                    print("Error looking for control PV:", e)
 
             # For each running IOC, get its PVs
             print(f"Archiver found {len(ioc_list)} running IOCs: {', '.join(ioc_list)}")
