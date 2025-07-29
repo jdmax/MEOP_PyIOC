@@ -71,7 +71,6 @@ def load_pv_data(archive_path, pv_name, start_date, end_date):
 
     pattern = f"{safe_pv_name}_*.csv"
     files = sorted(archive_dir.glob(pattern))
-    print("files",files)
     all_data = []
 
     for file in files:
