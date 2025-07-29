@@ -8,6 +8,7 @@ from pathlib import Path
 from softioc import builder
 from .base_device import BaseDevice
 import yaml
+import epics
 
 
 class Device(BaseDevice):
@@ -145,26 +146,25 @@ class Device(BaseDevice):
 
             # Set up monitors for each PV
             for pv in pv_list:
-                if self._should_archive(pv):
-                    try:
-                        # Initialize PV state
-                        self.monitored_pvs[pv] = {
-                            'value': None,
-                            'timestamp': None,
-                            'last_write': datetime.now(),
-                            'writer': self._get_csv_writer(pv)
-                        }
+                try:
+                    # Initialize PV state
+                    self.monitored_pvs[pv] = {
+                        'value': None,
+                        'timestamp': None,
+                        'last_write': datetime.now(),
+                        'writer': self._get_csv_writer(pv)
+                    }
 
-                        # Create monitor
-                        monitor = aioca.camonitor(
-                            pv,
-                            self._create_monitor_callback(pv),
-                            notify_disconnect=True
-                        )
-                        self.monitors.append(monitor)
+                    # Create monitor
+                    monitor = aioca.camonitor(
+                        pv,
+                        self._create_monitor_callback(pv),
+                        notify_disconnect=True
+                    )
+                    self.monitors.append(monitor)
 
-                    except Exception as e:
-                        print(f"Failed to monitor {pv}: {e}")
+                except Exception as e:
+                    print(f"Failed to monitor {pv}: {e}")
 
             self.pvs['Archive_PV_Count'].set(len(self.monitored_pvs))
             self.pvs['Archive_Status'].set(1)  # Running
@@ -199,10 +199,8 @@ class Device(BaseDevice):
         """Run a caget and return status"""
         try:
             status = await aioca.caget(pv)
-            print("stat",status)
             if status == 1:  # Running
                 ioc_list.append(name)
-                print("inside method",ioc_list)
         except Exception as e:
             print("Error looking for control PV:", e)
             status = 0
@@ -235,63 +233,17 @@ class Device(BaseDevice):
             print(f"Archiver found {len(ioc_list)} running IOCs: {', '.join(ioc_list)}")
 
             for ioc in ioc_list:
-                # Based on the settings, construct PV names
                 if ioc in self.full_settings:
                     ioc_settings = self.full_settings[ioc]
-                    if 'channels' in ioc_settings:
-                        for channel in ioc_settings['channels']:
-                            if channel and "None" not in channel:
-                                # Construct full PV name
-                                base_pv = f"{prefix}:{channel}"
-                                pv_list.append(base_pv)
-
-                                # Check for associated PVs based on device types
-                                suffixes = [
-                                    '_TI', '_PI', '_CI', '_VI', '_LI',  # Basic indicators
-                                    '_SP', '_Heater', '_Mode', '_Range',  # Temperature controllers
-                                    '_VC', '_CC',  # Power supplies
-                                    '_Manual', '_kP', '_kI', '_kD',  # PID controls
-                                    '_Coil_CI', '_Lead_CI', '_ULIM', '_LLIM', '_Sweep'  # Magnet supplies
-                                ]
-                                for suffix in suffixes:
-                                    pv_list.append(f"{base_pv}{suffix}")
+                    if 'records' in ioc_settings:
+                        for pv in ioc_settings['records']:
+                            pv_list.append(f"{prefix}:{pv}")
 
         except Exception as e:
             print(f"Error discovering PVs: {e}")
 
-        # Remove duplicates and filter by patterns
-        pv_list = list(set(pv_list))
-        filtered_pvs = []
-
-        for pv in pv_list:
-            if self._should_archive(pv):
-                # Test if PV exists
-                try:
-                    await aioca.caget(pv, timeout=1.0)
-                    filtered_pvs.append(pv)
-                except:
-                    pass
-
-        print(f"Archiver discovered {len(filtered_pvs)} valid PVs to monitor")
-        return filtered_pvs
-
-    def _should_archive(self, pv_name):
-        """Check if PV should be archived based on patterns"""
-        # Check exclude patterns first
-        for pattern in self.exclude_patterns:
-            if pattern in pv_name:
-                return False
-
-        # If no include patterns specified, archive everything
-        if not self.pv_patterns:
-            return True
-
-        # Check include patterns
-        for pattern in self.pv_patterns:
-            if pattern in pv_name:
-                return True
-
-        return False
+        print(f"Archiver discovered {len(pv_list)} valid PVs to monitor")
+        return pv_list
 
     def _create_monitor_callback(self, pv_name):
         """Create a callback function for a specific PV"""
