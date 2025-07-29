@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2025-01-01 12:00:00 by archiver-->
+<!--Saved on 2025-07-29 14:24:17 by poltar-->
 <display version="2.0.0">
   <name>EPICS Archiver Control</name>
   <width>600</width>
   <height>400</height>
-
   <widget type="label" version="2.0.0">
     <name>Title</name>
     <class>TITLE</class>
@@ -23,15 +22,12 @@
     </foreground_color>
     <transparent use_class="true">true</transparent>
   </widget>
-
-  <!-- Status Section -->
   <widget type="label" version="2.0.0">
     <name>Label_Status</name>
     <text>Archiver Status:</text>
     <y>50</y>
     <width>130</width>
   </widget>
-
   <widget type="textupdate" version="2.0.0">
     <name>Status_Display</name>
     <pv_name>ca://TGT:MEOP:Archive_Status</pv_name>
@@ -40,15 +36,12 @@
     <width>120</width>
     <format>6</format>
   </widget>
-
   <widget type="label" version="2.0.0">
     <name>Label_IOC</name>
     <text>Archiver IOC:</text>
     <x>300</x>
     <y>50</y>
-    <width>100</width>
   </widget>
-
   <widget type="bool_button" version="2.0.0">
     <name>IOC_Control</name>
     <pv_name>ca://TGT:MEOP:MAN:archiver_control</pv_name>
@@ -57,7 +50,6 @@
     <width>90</width>
     <height>20</height>
   </widget>
-
   <widget type="textupdate" version="2.0.0">
     <name>IOC_Heartbeat</name>
     <pv_name>ca://TGT:MEOP:MAN:archiver_hb</pv_name>
@@ -65,15 +57,12 @@
     <y>50</y>
     <width>60</width>
   </widget>
-
-  <!-- Enable/Disable Control -->
   <widget type="label" version="2.0.0">
     <name>Label_Enable</name>
     <text>Archive Enable:</text>
     <y>90</y>
     <width>130</width>
   </widget>
-
   <widget type="slide_button" version="2.0.0">
     <name>Enable_Control</name>
     <pv_name>ca://TGT:MEOP:Archive_Enable</pv_name>
@@ -83,15 +72,12 @@
     <width>120</width>
     <height>25</height>
   </widget>
-
-  <!-- PV Count -->
   <widget type="label" version="2.0.0">
     <name>Label_PV_Count</name>
     <text>PVs Monitored:</text>
     <y>130</y>
     <width>130</width>
   </widget>
-
   <widget type="textupdate" version="2.0.0">
     <name>PV_Count</name>
     <pv_name>ca://TGT:MEOP:Archive_PV_Count</pv_name>
@@ -100,33 +86,6 @@
     <width>80</width>
     <precision>0</precision>
   </widget>
-
-  <!-- Write Rate -->
-  <widget type="label" version="2.0.0">
-    <name>Label_Write_Rate</name>
-    <text>Write Rate:</text>
-    <y>160</y>
-    <width>130</width>
-  </widget>
-
-  <widget type="textupdate" version="2.0.0">
-    <name>Write_Rate</name>
-    <pv_name>ca://TGT:MEOP:Archive_Write_Rate</pv_name>
-    <x>140</x>
-    <y>160</y>
-    <width>80</width>
-    <precision>1</precision>
-  </widget>
-
-  <widget type="label" version="2.0.0">
-    <name>Label_Write_Units</name>
-    <text>writes/min</text>
-    <x>230</x>
-    <y>160</y>
-    <width>80</width>
-  </widget>
-
-  <!-- Settings Section -->
   <widget type="label" version="2.0.0">
     <name>Settings_Title</name>
     <class>COMMENT</class>
@@ -135,63 +94,54 @@
     <width>200</width>
     <height>25</height>
     <font use_class="true">
-      <font name="Comment" family="Liberation Sans" style="BOLD ITALIC" size="14.0">
+      <font name="Comment" family="Liberation Sans" style="ITALIC" size="14.0">
       </font>
     </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+    <wrap_words use_class="true">true</wrap_words>
   </widget>
-
-  <!-- Deadband -->
   <widget type="label" version="2.0.0">
     <name>Label_Deadband</name>
     <text>Deadband (%):</text>
     <y>250</y>
     <width>130</width>
   </widget>
-
   <widget type="spinner" version="2.0.0">
     <name>Deadband_Control</name>
     <pv_name>ca://TGT:MEOP:Archive_Deadband</pv_name>
     <x>140</x>
     <y>250</y>
-    <width>100</width>
     <precision>3</precision>
-    <minimum>0.0</minimum>
     <maximum>1.0</maximum>
     <increment>0.001</increment>
   </widget>
-
   <widget type="label" version="2.0.0">
     <name>Deadband_Help</name>
     <text>(0.01 = 1% change)</text>
     <x>250</x>
     <y>250</y>
     <width>150</width>
-    <font>
-      <font name="Default" family="Liberation Sans" style="REGULAR" size="12.0">
-      </font>
-    </font>
   </widget>
-
-  <!-- Time Increment -->
   <widget type="label" version="2.0.0">
     <name>Label_Time_Inc</name>
     <text>Time Increment:</text>
     <y>290</y>
     <width>130</width>
   </widget>
-
   <widget type="spinner" version="2.0.0">
     <name>Time_Inc_Control</name>
     <pv_name>ca://TGT:MEOP:Archive_Time_Increment</pv_name>
     <x>140</x>
     <y>290</y>
-    <width>100</width>
     <precision>0</precision>
-    <minimum>1</minimum>
-    <maximum>3600</maximum>
-    <increment>10</increment>
+    <minimum>1.0</minimum>
+    <maximum>3600.0</maximum>
+    <increment>10.0</increment>
   </widget>
-
   <widget type="label" version="2.0.0">
     <name>Time_Inc_Units</name>
     <text>seconds</text>
@@ -199,28 +149,19 @@
     <y>290</y>
     <width>80</width>
   </widget>
-
-  <!-- Archive Path Display -->
   <widget type="label" version="2.0.0">
     <name>Label_Path</name>
     <text>Archive Path:</text>
     <y>330</y>
     <width>130</width>
   </widget>
-
   <widget type="label" version="2.0.0">
     <name>Archive_Path</name>
     <text>archive/</text>
     <x>140</x>
     <y>330</y>
     <width>300</width>
-    <font>
-      <font name="Default" family="Liberation Sans" style="REGULAR" size="12.0">
-      </font>
-    </font>
   </widget>
-
-  <!-- Info Text -->
   <widget type="label" version="2.0.0">
     <name>Info_Text</name>
     <text>Data is archived when value changes by more than deadband
@@ -230,10 +171,5 @@ one file per PV per day.</text>
     <y>360</y>
     <width>400</width>
     <height>60</height>
-    <font>
-      <font name="Default" family="Liberation Sans" style="ITALIC" size="11.0">
-      </font>
-    </font>
   </widget>
-
 </display>

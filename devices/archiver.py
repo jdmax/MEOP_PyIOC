@@ -1,4 +1,4 @@
-# devices/archiver.py
+# Simple EPICS Archiver Device, J. Maxwell 2025
 import asyncio
 import aioca
 from datetime import datetime
@@ -70,7 +70,6 @@ class Device(BaseDevice):
         self.pvs['Archive_Status'] = builder.mbbIn('Archive_Status',
                                            'Stopped', 'Running', 'Error')
         self.pvs['Archive_PV_Count'] = builder.longIn('Archive_PV_Count')
-        self.pvs['Archive_Write_Rate'] = builder.aIn('Archive_Write_Rate')  # Writes per minute
 
         # Control PVs
         self.pvs['Archive_Enable'] = builder.boolOut('Archive_Enable',
@@ -83,20 +82,13 @@ class Device(BaseDevice):
         # Initialize values
         self.pvs['Archive_Status'].set(0)  # Stopped
         self.pvs['Archive_PV_Count'].set(0)
-        self.pvs['Archive_Write_Rate'].set(0)
         self.pvs['Archive_Deadband'].set(self.deadband)
         self.pvs['Archive_Time_Increment'].set(self.time_increment)
         self.pvs['Archive_Enable'].set(False)
 
     def _create_connection(self):
         """No physical connection needed for archiver"""
-        return ArchiverConnection()
-
-    def connect(self):
-        """Override connect - no physical device to connect to"""
-        self.t = self._create_connection()
-        # Start write rate calculator
-        asyncio.create_task(self._calculate_write_rate())
+        pass
 
     async def do_reads(self):
         """Archiver doesn't do periodic reads - it uses monitors"""
@@ -301,6 +293,7 @@ class Device(BaseDevice):
                 pv_data['value'] = value
                 pv_data['timestamp'] = current_time
                 pv_data['last_write'] = current_time
+                #print("Writing", pv_name, value, current_time)
 
         except Exception as e:
             print(f"Error handling update for {pv_name}: {e}")
@@ -363,23 +356,3 @@ class Device(BaseDevice):
 
         except Exception as e:
             print(f"Error writing {pv_name}: {e}")
-
-    async def _calculate_write_rate(self):
-        """Calculate and update write rate PV"""
-        last_count = 0
-
-        while True:
-            await asyncio.sleep(60)  # Calculate every minute
-
-            current_count = getattr(self, '_write_count', 0)
-            rate = current_count - last_count
-            last_count = current_count
-
-            self.pvs['Archive_Write_Rate'].set(rate)
-
-
-class ArchiverConnection:
-    """Dummy connection class for archiver"""
-
-    def __init__(self):
-        pass
