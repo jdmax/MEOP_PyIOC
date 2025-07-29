@@ -1,4 +1,5 @@
 # Simple EPICS Archiver Device, J. Maxwell 2025
+# Archives PVs in the "records" portion of a device's settings.yaml entry
 import asyncio
 import aioca
 from datetime import datetime
@@ -8,7 +9,6 @@ from pathlib import Path
 from softioc import builder
 from .base_device import BaseDevice
 import yaml
-import epics
 
 
 class Device(BaseDevice):

@@ -6,6 +6,7 @@ Run with:
     streamlit run archive_viewer.py
 """
 
+import re
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -44,16 +45,21 @@ def get_archived_pvs(archive_path):
     """Get list of all archived PVs"""
     archive_dir = Path(archive_path)
     if not archive_dir.exists():
+        print("Error, directory does not exist.", archive_path)
         return []
 
     pv_names = set()
     for file in archive_dir.glob("*.csv"):
         # Extract PV name from filename
-        parts = file.stem.rsplit('_', 3)
-        if len(parts) >= 4:
-            pv_name = '_'.join(parts[:-3]).replace('_', ':', 1)
-            pv_names.add(pv_name)
-
+        # Format is: {safe_pv_name}_{YYYY-MM-DD}.csv
+        parts = file.stem.rsplit('_', 1)  # Split on last underscore only
+        if len(parts) == 2:
+            safe_pv_name, date_part = parts
+            # Check if date_part looks like a date (YYYY-MM-DD)
+            if re.match(r'\d{4}-\d{2}-\d{2}', date_part):
+                # Convert back to PV name format
+                pv_name = safe_pv_name.replace('_', ':', 1)
+                pv_names.add(pv_name)
     return sorted(pv_names)
 
 
@@ -64,15 +70,23 @@ def load_pv_data(archive_path, pv_name, start_date, end_date):
     safe_pv_name = pv_name.replace(':', '_').replace('/', '_')
 
     pattern = f"{safe_pv_name}_*.csv"
-    print("p",pattern)
     files = sorted(archive_dir.glob(pattern))
-
+    print("files",files)
     all_data = []
 
     for file in files:
-        print("file",file)
         try:
-            file_date_str = file.stem.split('_')[-1]
+            # Extract date from filename: {safe_pv_name}_{YYYY-MM-DD}.csv
+            parts = file.stem.rsplit('_', 1)
+            if len(parts) != 2:
+                continue
+
+            safe_pv_name_part, file_date_str = parts
+
+            # Verify this is the right PV
+            if safe_pv_name_part != safe_pv_name:
+                continue
+
             file_date = datetime.strptime(file_date_str, '%Y-%m-%d')
 
             # Skip files outside date range
@@ -103,7 +117,6 @@ def load_pv_data(archive_path, pv_name, start_date, end_date):
         return combined_df
 
     return pd.DataFrame()
-
 
 def create_time_series_plot(data_dict, title=""):
     """Create time series plot for multiple PVs"""
@@ -195,7 +208,7 @@ def main():
         # Archive path
         archive_path = st.text_input(
             "Archive Path",
-            value="archive/data",
+            value="data",
             help="Path to the archive directory"
         )
 
