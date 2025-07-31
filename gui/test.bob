@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2024-05-10 12:54:19 by poltar-->
+<!--Saved on 2025-07-31 14:57:24 by poltar-->
 <display version="2.0.0">
   <name>Liquifier Status</name>
   <width>700</width>
@@ -210,5 +210,11 @@
     <text>Level:</text>
     <y>240</y>
     <width>130</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_22</name>
+    <pv_name>pva://MYLAB:Test_TI</pv_name>
+    <x>120</x>
+    <y>270</y>
   </widget>
 </display>
