@@ -14,13 +14,13 @@ class Device(BaseDevice):
 
     def __init__(self, device_name, settings):
         # Store PID parameters before calling parent init
-        outs = setting['out']
+        outs = settings['outs']  # Fixed: was 'setting['out']'
         self.pid_params = {
             'kp': outs.get('kp', 1.0),
             'ki': outs.get('ki', 0.0),
             'kd': outs.get('kd', 0.0),
             'setpoint': outs.get('setpoint', 0.0),
-            'output_limits': (settings.get('min_output', 0), settings.get('max_output', 100))
+            'output_limits': (outs.get('min_output', 0), outs.get('max_output', 100))  # Fixed: should get from outs
         }
         self.auto_mode = outs.get('auto_start', False)
 
@@ -28,7 +28,6 @@ class Device(BaseDevice):
         self.output_pv = settings.get('output_pv')
 
         super().__init__(device_name, settings)
-
 
     def _create_pvs(self):
         """Create PID-specific PVs"""
@@ -73,15 +72,17 @@ class Device(BaseDevice):
                 initial_value=1 if self.auto_mode else 0,
                 on_update_name=self.do_sets
             )
-            # Output limits
+            # Output limits - Fixed: check for None instead of truthy/falsy
+            max_limit = self.pid_params['output_limits'][1]
+            min_limit = self.pid_params['output_limits'][0]
             self.pvs[channel + "_DRVH"] = builder.aOut(
                 channel + "_DRVH",
-                initial_value=self.pid_params['output_limits'][1] if self.pid_params['output_limits'][1] else 100.0,
+                initial_value=max_limit if max_limit is not None else 100.0,
                 on_update_name=self.do_sets
             )
             self.pvs[channel + "_DRVL"] = builder.aOut(
                 channel + "_DRVL",
-                initial_value=self.pid_params['output_limits'][0] if self.pid_params['output_limits'][0] else -100.0,
+                initial_value=min_limit if min_limit is not None else -100.0,
                 on_update_name=self.do_sets
             )
 
@@ -116,7 +117,7 @@ class Device(BaseDevice):
         channel = pv_name.split("_")[0]
 
         # Update PID parameters when any control PV changes
-        if any(suffix in pv_name for suffix in ["_KP", "_KI", "_KD", "_SP", "_DRVH", "_DRVL", "_DT"]):
+        if any(suffix in pv_name for suffix in ["_KP", "_KI", "_KD", "_SP", "_DRVH", "_DRVL"]):
             self._update_pid_params()
         # Handle mode changes
         if "_Mode" in pv_name:
@@ -150,13 +151,16 @@ class Device(BaseDevice):
                         if self.output_pv:
                             await aioca.caput(self.output_pv, manual_output, timeout=2)
 
-                    self._handle_read_success()
+                    self.remove_alarm(channel + "_PV")  # Fixed: clear alarms on success
 
                 except aioca.CANothing as e:
                     print(f"PID CA error: {e}")
-                    self._handle_read_error()
+                    self.set_alarm(channel + "_PV")  # Fixed: set alarm on CA error
                     return False
+
+            self._handle_read_success()
             return True
+
         except Exception as e:
             print(f"PID control error: {e}")
             self._handle_read_error()
