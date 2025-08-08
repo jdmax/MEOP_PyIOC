@@ -347,3 +347,28 @@ mks937b:
         - OVC_CC_PI
         - None
         - OVC_Pirani_PI
+pid_temp:
+  module: 'devices.pid_controller'
+  autostart: True
+  delay: 1  # Update rate in seconds
+  input_pv: 'TGT:MEOP:Test_TI'  # Read temperature from this PV
+  output_pv: 'TGT:MEOP:Test_Heater_CI'  # Write output to this PV
+  outs:
+    kp: 2.0
+    ki: 0.5
+    kd: 0.1
+    setpoint: 4.5  # Initial setpoint in K
+    min_output: 0
+    max_output: 100
+    min_change: 0.0
+    max_change: 100.0
+    auto_start: False  # Start in manual mode
+  channels:   # for PID, just list one channel
+    - PID_Temp
+  records:
+    PID_Temp_SP:
+      DESC: 'Temperature Setpoint'
+      PREC: 3
+      EGU: 'K'
+      DRVH: 300
+      DRVL: 2
