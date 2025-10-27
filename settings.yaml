@@ -376,7 +376,7 @@ cm4g_magnet:
 dat8024:
   module: 'devices.dat8024'
   autostart: True          # Should IOC Manager try to start this?
-  ip: '129.57.37.132'
+  ip: '129.57.37.52'
   port: '502'
   timeout: 2
   delay: 5
