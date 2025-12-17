@@ -224,6 +224,87 @@ dat8018:
       HIGH: 180
       LOW: 2
       LOLO: 1
+dat8018_2:
+  module: 'devices.dat8018'
+  autostart: True          # Should IOC Manager try to start this?
+  ip: '129.57.36.216'
+  port: '502'
+  timeout: 2
+  delay: 5
+  channels: # List of channel names in order. None indicates unused channel.
+    - EEL_One_TI
+    - EEL_Two_TI
+    - EEL_Three_TI
+    - EEL_Four_TI
+    - EEL_Five_TI
+    - EEL_Six_TI
+    - EEL_Seven_TI
+    - EEL_Eight_TI
+  records:
+    EEL_One_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Two_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Three_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Four_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Five_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Six_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Seven_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
+    EEL_Eight_TI:
+      DESC: 'TC'
+      PREC: 2
+      EGU: 'C'
+      HIHI: 200
+      HIGH: 180
+      LOW: 2
+      LOLO: 1
 lm500:
   module: 'devices.lm500'
   autostart: True          # Should IOC Manager try to start this?
