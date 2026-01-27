@@ -5,7 +5,7 @@ import random
 import statistics
 
 TARGET_PV = 'TGT:MEOP:Voltage1_VC'
-BURST_SIZE = 100  # Number of back-to-back updates
+BURST_SIZE = 500  # Number of back-to-back updates
 
 
 class StressBenchmark:
