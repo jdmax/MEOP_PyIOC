@@ -55,8 +55,6 @@ class Device(BaseDevice):
                 try:
                     pid = proc.info['pid']
 
-                    if pid == self._my_pid:   # exclude usage from this device from total
-                        continue
                     if 'python' in (proc.info['name'] or '').lower():
                         cmdline = proc.info['cmdline'] or []
                         if any('master_ioc.py' in arg for arg in cmdline):
