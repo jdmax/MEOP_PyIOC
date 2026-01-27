@@ -13,7 +13,7 @@ class Device(BaseDevice):
         """Create aggregate monitoring PVs"""
         # Aggregate CPU usage of all master_ioc instances
         self.pvs['TOTAL_IOC_CPU'] = builder.aIn(
-            f'{self.device_name}:TOTAL_IOC_CPU',
+            f'TOTAL_IOC_CPU',
             initial_value=0,
             EGU='%',
             PREC=2,
@@ -22,7 +22,7 @@ class Device(BaseDevice):
 
         # Aggregate Memory usage of all master_ioc instances
         self.pvs['TOTAL_IOC_MEM'] = builder.aIn(
-            f'{self.device_name}:TOTAL_IOC_MEM',
+            f'TOTAL_IOC_MEM',
             initial_value=0,
             EGU='MB',
             PREC=1,
@@ -31,7 +31,7 @@ class Device(BaseDevice):
 
         # Count of running master_ioc processes found
         self.pvs['IOC_COUNT'] = builder.longIn(
-            f'{self.device_name}:IOC_COUNT',
+            f'IOC_COUNT',
             initial_value=0,
             **self.sevr
         )
