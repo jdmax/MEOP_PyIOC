@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--Saved on 2025-12-17 10:46:25 by poltar-->
+<!--Saved on 2026-01-27 15:29:43 by poltar-->
 <display version="2.0.0">
   <name>Thermocouple Readings</name>
   <width>700</width>
@@ -311,5 +311,62 @@
     <text>Laser Absorb:</text>
     <y>510</y>
     <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_32</name>
+    <pv_name>ca://TGT:MEOP:MAN:ioc_health_hb</pv_name>
+    <x>550</x>
+    <y>560</y>
+  </widget>
+  <widget type="bool_button" version="2.0.0">
+    <name>Boolean Button_7</name>
+    <pv_name>ca://TGT:MEOP:MAN:ioc_health_control</pv_name>
+    <x>430</x>
+    <y>560</y>
+    <width>90</width>
+    <height>20</height>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_34</name>
+    <text>IOC Health:</text>
+    <x>290</x>
+    <y>560</y>
+    <width>140</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_33</name>
+    <pv_name>ca://TGT:MEOP:TOTAL_IOC_CPU</pv_name>
+    <x>130</x>
+    <y>560</y>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_34</name>
+    <pv_name>ca://TGT:MEOP:TOTAL_IOC_MEM</pv_name>
+    <x>130</x>
+    <y>580</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_36</name>
+    <text>Memory Usage:</text>
+    <y>580</y>
+    <width>130</width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_37</name>
+    <text>CPU Load:</text>
+    <y>560</y>
+    <width>130</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_35</name>
+    <pv_name>ca://TGT:MEOP:IOC_COUNT</pv_name>
+    <x>130</x>
+    <y>600</y>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_38</name>
+    <text>IOC Count:</text>
+    <y>600</y>
+    <width>130</width>
   </widget>
 </display>

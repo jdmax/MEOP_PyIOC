@@ -10,8 +10,8 @@ general:
 ioc_health:
   module: 'devices.ioc_health'
   timeout: 2
-  delay: 0.5
-  channels:
+  delay: 1.0
+  channels: []
 pfeiffer-26x_1:
   module: 'devices.tpg_26x'
   autostart: True

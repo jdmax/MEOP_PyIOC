@@ -3,7 +3,7 @@ from softioc import builder
 from .base_device import BaseDevice
 
 
-class IocHealth(BaseDevice):
+class Device(BaseDevice):
     """
     Monitor total resource intensity specifically for master_ioc.py instances.
     Calculates aggregate CPU and Memory for all IOCs managed in screens.
