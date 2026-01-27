@@ -60,7 +60,8 @@ class Device(BaseDevice):
                     if 'python' in (proc.info['name'] or '').lower():
                         cmdline = proc.info['cmdline'] or []
                         if any('master_ioc.py' in arg for arg in cmdline):
-
+                            if any('ioc_health' in arg for arg in cmdline):
+                                continue
                             # If we don't have this PID in cache, add it
                             if pid not in self._proc_cache:
                                 self._proc_cache[pid] = proc
