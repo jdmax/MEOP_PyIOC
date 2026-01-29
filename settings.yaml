@@ -7,8 +7,8 @@ general:
   epics_addr_list: '127.255.255.255'  # On experimental equipment network
   #epics_beacon_addr_list: '127.255.255.255'
   delay: 0.5
-ioc_health:
-  module: 'devices.ioc_health'
+ioc_load:
+  module: 'devices.ioc_load'
   timeout: 2
   delay: 1.0
   channels: []
