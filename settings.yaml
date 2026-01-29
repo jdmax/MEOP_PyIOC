@@ -10,7 +10,7 @@ general:
 ioc_load:
   module: 'devices.ioc_load'
   timeout: 2
-  delay: 1.0
+  delay: 2
   channels: []
 pfeiffer-26x_1:
   module: 'devices.tpg_26x'
