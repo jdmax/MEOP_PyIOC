@@ -1,9 +1,8 @@
-import re
+import asyncio
 
 from .base_device import BaseDevice
 from alicat import FlowController
 from softioc import builder
-import asyncio
 
 
 class Device(BaseDevice):
@@ -12,13 +11,11 @@ class Device(BaseDevice):
     def _create_pvs(self):
         """Create level input PVs for each channel"""
         for channel in self._skip_none_channels():
-            self.pvs[channel + "_FI"] = builder.aIn(channel + "_FI", **self.sevr)  # Mass flow
-            self.pvs[channel + "_PI"] = builder.aIn(channel + "_PI", **self.sevr)  # Pressure
-            self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **self.sevr)  # Temperature (C)
-            self.pvs[channel + "_CI"] = builder.aIn(channel + "_CI", **self.sevr)  # Control (flow or pressure)
-
-            self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", **self.sevr)  # Setpoint
-
+            self.pvs[channel + "_FI"] = builder.aIn(channel + "_FI", **self.sevr)   # Mass flow
+            self.pvs[channel + "_PI"] = builder.aIn(channel + "_PI", **self.sevr)   # Pressure
+            self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **self.sevr)   # Temperature (C)
+            self.pvs[channel + "_CI"] = builder.aIn(channel + "_CI", **self.sevr)   # Control (flow or pressure)
+            self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **self.sevr)  # Setpoint
 
     def _create_connection(self):
         return DeviceConnection(
@@ -31,25 +28,27 @@ class Device(BaseDevice):
     async def do_reads(self):
         """Read from Alicat"""
         try:
-            dict = await self.t.read_all()
-            for i, channel in enumerate(self.channels):
-                if "None" in channel: continue
-                self.pvs[channel+"_FI"].set(dict['mass_flow'])
-                self.pvs[channel+"_PI"].set(dict['pressure'])
-                self.pvs[channel+"_TI"].set(dict['temperature'])
-                self.pvs[channel+"_CI"].set(dict['control_point'])
+            data = await self.t.read_all()
+            for channel in self._skip_none_channels():
+                self.pvs[channel + "_FI"].set(data['mass_flow'])
+                self.pvs[channel + "_PI"].set(data['pressure'])
+                self.pvs[channel + "_TI"].set(data['temperature'])
+                self.pvs[channel + "_CI"].set(data['control_point'])
             self._handle_read_success()
             return True
         except OSError:
             self._handle_read_error()
             return False
 
-    async def read_outs(self):
+    def read_outs(self):
         """Read and set OUT PVs at the start of the IOC"""
+        asyncio.get_event_loop().run_until_complete(self._async_read_outs())
+
+    async def _async_read_outs(self):
         for pv_name in self._skip_none_channels():
             try:
-                dict = await self.t.read_all()
-                self.pvs[pv_name + '_SP'].set(dict['setpoint'])
+                data = await self.t.read_all()
+                self.pvs[pv_name + '_SP'].set(data['setpoint'])
             except OSError:
                 print("Read out error on", pv_name)
                 self.reconnect()
@@ -57,12 +56,9 @@ class Device(BaseDevice):
     def do_sets(self, new_value, pv):
         """Set PV values to device"""
         pv_name = pv.replace(self.device_name + ':', '')  # remove device name
-        p = pv_name.split("_")[0]  # pv_name root
-
         try:
             if '_SP' in pv_name:
-                value = self.t.set_flow_rate(self.pvs[p + '_SP'].get())
-                self.pvs[pv_name].set(float(value))
+                asyncio.ensure_future(self.t.set_flow_rate(new_value))
             else:
                 print('Error, control PV not categorized.', pv_name)
         except OSError:
@@ -73,9 +69,9 @@ class DeviceConnection():
     """Handle connection to Alicat MCW Flow Controller through 'alicat' Python interface"""
 
     def __init__(self, host, port, timeout, gas_type):
-
+        self.host = host
         try:
-            self.fc = FlowController(address = host)
+            self.fc = FlowController(address=host)
             self.fc.set_gas(gas_type)
         except Exception as e:
             print(f"Alicat Connection failed on {self.host}: {e}")
@@ -83,12 +79,11 @@ class DeviceConnection():
     async def read_all(self):
         """Read from device"""
         try:
-            dict = await self.fc.get()
-            return dict
+            data = await self.fc.get()
+            return data
         except Exception as e:
             print(f"Alicat read failed on {self.host}: {e}")
             raise OSError('Alicat read')
-
 
     async def set_flow_rate(self, rate):
         """Set flow rate set point"""
