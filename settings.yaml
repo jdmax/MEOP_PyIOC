@@ -444,7 +444,7 @@ mks937b:
         - None
         - OVC_Pirani_PI
 alicat:
-    module: 'devices.alicat'
+    module: 'devices.alicat_flow'
     autostart: False          # Should IOC Manager try to start this?
     ip: '192.168.1.107'
     port: '1001'            # channel 3 of serial to ethernet
