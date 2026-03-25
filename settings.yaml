@@ -446,7 +446,7 @@ mks937b:
 alicat:
     module: 'devices.alicat_flow'
     autostart: False          # Should IOC Manager try to start this?
-    ip: '192.168.1.107'
+    ip: '129.57.37.86'
     port: '1001'            # channel 3 of serial to ethernet
     timeout: 2
     delay: 2
