@@ -44,9 +44,12 @@ class Device(BaseDevice):
         asyncio.ensure_future(self._async_post_connect())
 
     async def _async_post_connect(self):
-        await self.t.async_connect()
-        await self.t.set_gas_type(self.settings['gas_type'])
-        await self._async_read_outs()
+        try:
+            await self.t.async_connect()
+            await self.t.set_gas_type(self.settings['gas_type'])
+            await self._async_read_outs()
+        except OSError as e:
+            print(f"Post-connect failed on {self.settings['ip']}: {e}")
 
     async def _async_read_outs(self):
         for pv_name in self._skip_none_channels():
