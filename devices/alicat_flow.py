@@ -21,8 +21,7 @@ class Device(BaseDevice):
         return DeviceConnection(
             self.settings['ip'],
             self.settings['port'],
-            self.settings['timeout'],
-            self.settings['gas_type']
+            self.settings['timeout']
         )
 
     async def do_reads(self):
@@ -40,9 +39,13 @@ class Device(BaseDevice):
             self._handle_read_error()
             return False
 
-    def read_outs(self):
-        """Read and set OUT PVs at the start of the IOC"""
-        asyncio.get_event_loop().run_until_complete(self._async_read_outs())
+    def _post_connect(self):
+        """Schedule async gas type init and setpoint read after connection"""
+        asyncio.ensure_future(self._async_post_connect())
+
+    async def _async_post_connect(self):
+        await self.t.set_gas_type(self.settings['gas_type'])
+        await self._async_read_outs()
 
     async def _async_read_outs(self):
         for pv_name in self._skip_none_channels():
@@ -68,11 +71,10 @@ class Device(BaseDevice):
 class DeviceConnection():
     """Handle connection to Alicat MCW Flow Controller through 'alicat' Python interface"""
 
-    def __init__(self, host, port, timeout, gas_type):
+    def __init__(self, host, port, timeout):
         self.host = host
         try:
             self.fc = FlowController(f'{host}:{port}')
-            asyncio.get_event_loop().run_until_complete(self.set_gas_type(gas_type))
         except Exception as e:
             print(f"Alicat Connection failed on {self.host}: {e}")
             raise
