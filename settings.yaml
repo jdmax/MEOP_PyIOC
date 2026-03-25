@@ -447,7 +447,7 @@ alicat:
     module: 'devices.alicat_flow'
     autostart: False          # Should IOC Manager try to start this?
     ip: '129.57.37.86'
-    port: '44818'
+    port: '23'
     timeout: 2
     delay: 2
     gas_type: 'He'  # Gas type, "N2", "He", or other listed in manual. Can also be number from manual.
