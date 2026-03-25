@@ -72,7 +72,7 @@ class DeviceConnection():
         self.host = host
         try:
             self.fc = FlowController(f'{host}:{port}')
-            self.fc.set_gas(gas_type)
+            asyncio.get_event_loop().run_until_complete(self.set_gas_type(gas_type))
         except Exception as e:
             print(f"Alicat Connection failed on {self.host}: {e}")
             raise
@@ -89,3 +89,7 @@ class DeviceConnection():
     async def set_flow_rate(self, rate):
         """Set flow rate set point"""
         await self.fc.set_flow_rate(rate)
+
+    async def set_gas_type(self, type):
+        """Set flow rate set point"""
+        await self.fc.set_gas(type)
