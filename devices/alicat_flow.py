@@ -44,6 +44,7 @@ class Device(BaseDevice):
         asyncio.ensure_future(self._async_post_connect())
 
     async def _async_post_connect(self):
+        await self.t.async_connect()
         await self.t.set_gas_type(self.settings['gas_type'])
         await self._async_read_outs()
 
@@ -73,14 +74,20 @@ class DeviceConnection():
 
     def __init__(self, host, port, timeout):
         self.host = host
+        self.port = port
+        self.fc = None
+
+    async def async_connect(self):
         try:
-            self.fc = FlowController(f'{host}:{port}')
+            self.fc = FlowController(f'{self.host}:{self.port}')
         except Exception as e:
             print(f"Alicat Connection failed on {self.host}: {e}")
             raise
 
     async def read_all(self):
         """Read from device"""
+        if self.fc is None:
+            raise OSError('Alicat not connected')
         try:
             data = await self.fc.get()
             return data
