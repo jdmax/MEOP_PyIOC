@@ -71,10 +71,11 @@ class DeviceConnection():
     def __init__(self, host, port, timeout, gas_type):
         self.host = host
         try:
-            self.fc = FlowController(address=host)
+            self.fc = FlowController(f'{host}:{port}')
             self.fc.set_gas(gas_type)
         except Exception as e:
             print(f"Alicat Connection failed on {self.host}: {e}")
+            raise
 
     async def read_all(self):
         """Read from device"""
