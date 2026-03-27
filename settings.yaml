@@ -136,6 +136,31 @@ lakeshore_218:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
       HIGH: 300
       LOW: 2
       LOLO: 1
+lakeshore_218_2:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
+  module: 'devices.ls218'
+  autostart: True          # Should IOC Manager try to start this?
+  ip: '129.57.37.100'
+  port: '1002'    # channel 1 of serial to ethernet
+  timeout: 2
+  delay: 10
+  channels: # List of PV names for each read channel of 218 in order
+    - First_Stage_TI
+    - None
+    - Gas_In_TI
+    - Gas_Out_TI
+    - Second_Stage_TI
+    - None
+    - None
+    - Test_Heater_TI
+  records:
+    First_Stage_TI:
+      DESC: 'First Stage'
+      PREC: 2
+      EGU: 'K'
+      HIHI: 310
+      HIGH: 300
+      LOW: 2
+      LOLO: 1
 rigol_dp832:
   module: 'devices.dp832'
   autostart: True          # Should IOC Manager try to start this?
