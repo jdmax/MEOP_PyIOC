@@ -140,7 +140,7 @@ lakeshore_218_2:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
   module: 'devices.ls218'
   autostart: True          # Should IOC Manager try to start this?
   ip: '129.57.37.100'
-  port: '1002'    # channel 1 of serial to ethernet
+  port: '23'    # Single channel serial to ethernet needs 23
   timeout: 2
   delay: 10
   channels: # List of PV names for each read channel of 218 in order
