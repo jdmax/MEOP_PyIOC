@@ -161,6 +161,38 @@ lakeshore_218_2:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
       HIGH: 300
       LOW: 2
       LOLO: 1
+    Gas_In_TI:
+      DESC: 'Gas Input'
+      PREC: 2
+      EGU: 'K'
+      HIHI: 310
+      HIGH: 300
+      LOW: 2
+      LOLO: 1
+    Gas_Out_TI:
+      DESC: 'Gas Output'
+      PREC: 2
+      EGU: 'K'
+      HIHI: 310
+      HIGH: 300
+      LOW: 2
+      LOLO: 1
+    Second_Stage_TI:
+      DESC: 'Second Stage'
+      PREC: 2
+      EGU: 'K'
+      HIHI: 310
+      HIGH: 300
+      LOW: 2
+      LOLO: 1
+    Test_Heater_TI:
+      DESC: 'Test Heater'
+      PREC: 2
+      EGU: 'K'
+      HIHI: 310
+      HIGH: 300
+      LOW: 2
+      LOLO: 1
 rigol_dp832:
   module: 'devices.dp832'
   autostart: True          # Should IOC Manager try to start this?
