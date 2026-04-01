@@ -139,8 +139,8 @@ lakeshore_218:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
 lakeshore_218_2:  # Lakeshore RS232: 7 data bits, Odd parity, 1 stop bit
   module: 'devices.ls218'
   autostart: True          # Should IOC Manager try to start this?
-  ip: '129.57.37.100'
-  port: '23'    # Single channel serial to ethernet needs 23
+  ip: '129.57.37.107'
+  port: '1001'
   timeout: 2
   delay: 10
   channels: # List of PV names for each read channel of 218 in order
@@ -538,7 +538,7 @@ pid_temp:
 hfc300:
   module: 'devices.hfc300'
   autostart: True
-  ip: '129.57.37.101'
+  ip: '129.57.37.107'
   port: '1002'            # channel 2 of serial to ethernet
   timeout: 2
   delay: 2
