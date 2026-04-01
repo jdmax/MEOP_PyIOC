@@ -443,16 +443,16 @@ mks937b:
         - OVC_CC_PI
         - None
         - OVC_Pirani_PI
-alicat:
-    module: 'devices.alicat_flow'
-    autostart: False          # Should IOC Manager try to start this?
-    ip: '129.57.37.86'
-    port: '44818'
-    timeout: 2
-    delay: 2
-    gas_type: 'He'  # Gas type, "N2", "He", or other listed in manual. Can also be number from manual.
-    channels:
-        - Outflow
+#alicat:
+#    module: 'devices.alicat_flow'
+#    autostart: False          # Should IOC Manager try to start this?
+#    ip: '129.57.37.86'
+#    port: '44818'
+#    timeout: 2
+#    delay: 2
+#    gas_type: 'He'  # Gas type, "N2", "He", or other listed in manual. Can also be number from manual.
+#    channels:
+#        - Outflow
 pid_temp:
   module: 'devices.pid_controller'
   autostart: True
@@ -478,3 +478,45 @@ pid_temp:
       EGU: 'K'
       DRVH: 300
       DRVL: 2
+hfc300:
+  module: 'devices.hfc300'
+  autostart: True
+  ip: '129.57.37.101'
+  port: '1002'            # channel 2 of serial to ethernet
+  timeout: 2
+  delay: 2
+  channels:
+    - HFC1
+  records:
+    HFC1_FI:
+      DESC: 'HFC300 Flow'
+      PREC: 3
+      EGU: 'SLM'
+      HIHI: 110
+      HIGH: 105
+      LOW: -1
+      LOLO: -2
+    HFC1_TI:
+      DESC: 'HFC300 Temperature'
+      PREC: 1
+      EGU: 'C'
+      HIHI: 60
+      HIGH: 50
+      LOW: 0
+      LOLO: -5
+    HFC1_SS:
+      DESC: 'HFC300 System State'
+      PREC: 0
+    HFC1_SP_IMP:
+      DESC: 'HFC300 Implemented Setpoint'
+      PREC: 3
+      EGU: 'SLM'
+    HFC1_VP:
+      DESC: 'HFC300 Valve Position'
+      PREC: 0
+    HFC1_SP:
+      DESC: 'HFC300 Flow Setpoint'
+      PREC: 3
+      EGU: 'SLM'
+      DRVH: 100
+      DRVL: 0
