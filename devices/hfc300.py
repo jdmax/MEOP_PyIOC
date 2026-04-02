@@ -13,11 +13,11 @@ class Device(TelnetDevice):
 
     def _create_pvs(self):
         """Create PVs for each channel"""
-        #mode_list = [
-        #    ['Default', 0], ['Auto', 0], ['Hold', 0], ['Shut', 0],
-        #    ['Purge', 0], ['Variable', 0], ['Error', 0]
-        #]
-        mode_list = ['Default','Auto','Hold','Shut','Purge','Variable','Error']
+        mode_list = [
+            ['Default', 0], ['Auto', 0], ['Hold', 0], ['Shut', 0],
+            ['Purge', 0], ['Variable', 0], ['Error', 0]
+        ]
+
 
 
         for channel in self._skip_none_channels():
@@ -25,7 +25,7 @@ class Device(TelnetDevice):
             self.pvs[channel + "_TI"] = builder.aIn(channel + "_TI", **self.sevr)          # Temperature (C)
             self.pvs[channel + "_SS"] = builder.aIn(channel + "_SS", **self.sevr)          # System state
             self.pvs[channel + "_SP_IMP"] = builder.aIn(channel + "_SP_IMP", **self.sevr)  # Implemented setpoint
-            self.pvs[channel + "_VP"] = builder.aIn(channel + "_VP", **self.sevr)          # Valve position
+            self.pvs[channel + "_VP"] = builder.stringIn(channel + "_VP")                   # Valve position
 
             self.pvs[channel + "_MODE"] = builder.mbbOut(channel + "_MODE", *mode_list, on_update_name=self.do_sets)  # MFC mode
             self.pvs[channel + "_SP"] = builder.aOut(channel + "_SP", on_update_name=self.do_sets, **self.sevr)      # Setpoint
@@ -134,12 +134,23 @@ class DeviceConnection(TelnetConnection):
             print(f"HFC300 implemented setpoint read failed on {self.host}: {e}")
             raise OSError('HFC300 implemented setpoint read')
 
+    _VP_BASE = {0x10: 'CLOSED', 0x20: 'PURGE', 0x30: 'HOLD', 0x40: 'VARIABLE', 0x50: 'AUTO'}
+    _VP_MODIFIERS = {0x01: 'OVERRIDE_SHUT', 0x02: '1PCT_SHUTDOWN', 0x04: 'OVERRIDE_PURGE'}
+
+    @staticmethod
+    def _decode_valve_position(val):
+        """Decode V3 hex value to human-readable string"""
+        modifier_bits = val & 0x07
+        if modifier_bits:
+            return '+'.join(s for bit, s in DeviceConnection._VP_MODIFIERS.items() if modifier_bits & bit)
+        return DeviceConnection._VP_BASE.get(val & 0xF0, f'UNKNOWN(x{val:02X})')
+
     def read_valve_position(self):
-        """Read valve position as integer from hex response (V3 command)"""
+        """Read valve position as string from hex response (V3 command)"""
         try:
             data = self._send_command('V3')
             m = self.hex_regex.search(data)
-            return int(m.group(1), 16)
+            return self._decode_valve_position(int(m.group(1), 16))
         except Exception as e:
             print(f"HFC300 valve position read failed on {self.host}: {e}")
             raise OSError('HFC300 valve position read')
