@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Saved on 2026-04-02 13:29:13 by poltar-->
+<display version="2.0.0">
+  <name>Cold Stand Status</name>
+  <widget type="label" version="2.0.0">
+    <name>Label</name>
+    <class>TITLE</class>
+    <text>Cold Test Stand Display</text>
+    <x use_class="true">0</x>
+    <y use_class="true">0</y>
+    <width>550</width>
+    <height>31</height>
+    <font use_class="true">
+      <font name="Header 1" family="Liberation Sans" style="BOLD" size="22.0">
+      </font>
+    </font>
+    <foreground_color use_class="true">
+      <color name="Text" red="0" green="0" blue="0">
+      </color>
+    </foreground_color>
+    <transparent use_class="true">true</transparent>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_3</name>
+    <text>Flow IOC:</text>
+    <x>300</x>
+    <y>50</y>
+    <width>130</width>
+  </widget>
+  <widget type="bool_button" version="2.0.0">
+    <name>Boolean Button</name>
+    <pv_name>ca://TGT:MEOP:MAN:alicat_control</pv_name>
+    <x>440</x>
+    <y>50</y>
+    <width>90</width>
+    <height>20</height>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_4</name>
+    <pv_name>ca://TGT:MEOP:MAN:alicat_hb</pv_name>
+    <x>560</x>
+    <y>50</y>
+    <width>60</width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_11</name>
+    <text>Flow Temp</text>
+    <y>50</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_2</name>
+    <pv_name>ca://TGT:MEOP:Outflow_TI</pv_name>
+    <x>120</x>
+    <y>50</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_4</name>
+    <text>LS218 2 IOC:</text>
+    <x>300</x>
+    <y>100</y>
+    <width>130</width>
+  </widget>
+  <widget type="bool_button" version="2.0.0">
+    <name>Boolean Button_1</name>
+    <pv_name>ca://TGT:MEOP:MAN:lakeshore_218_2_control</pv_name>
+    <x>440</x>
+    <y>100</y>
+    <width>90</width>
+    <height>20</height>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_5</name>
+    <pv_name>ca://TGT:MEOP:MAN:lakeshore_218_2_hb</pv_name>
+    <x>560</x>
+    <y>100</y>
+    <width>60</width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_12</name>
+    <text>First Stage</text>
+    <y>100</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_6</name>
+    <pv_name>ca://TGT:MEOP:First_Stage_TI</pv_name>
+    <x>120</x>
+    <y>100</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_13</name>
+    <text>Gas In</text>
+    <y>120</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_7</name>
+    <pv_name>ca://TGT:MEOP:Gas_In_TI</pv_name>
+    <x>120</x>
+    <y>120</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_14</name>
+    <text>Gas Out</text>
+    <y>140</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_8</name>
+    <pv_name>ca://TGT:MEOP:Gas_Out_TI</pv_name>
+    <x>120</x>
+    <y>140</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_15</name>
+    <text>Second Stage</text>
+    <y>160</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_9</name>
+    <pv_name>ca://TGT:MEOP:Second_Stage_TI</pv_name>
+    <x>120</x>
+    <y>160</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_16</name>
+    <text>Heater Temp</text>
+    <y>180</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_10</name>
+    <pv_name>ca://TGT:MEOP:Test_Heater_TI</pv_name>
+    <x>120</x>
+    <y>180</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_17</name>
+    <text>HFC IOC:</text>
+    <x>300</x>
+    <y>230</y>
+    <width>130</width>
+  </widget>
+  <widget type="bool_button" version="2.0.0">
+    <name>Boolean Button_2</name>
+    <pv_name>ca://TGT:MEOP:MAN:hfc300_control</pv_name>
+    <x>440</x>
+    <y>230</y>
+    <width>90</width>
+    <height>20</height>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_11</name>
+    <pv_name>ca://TGT:MEOP:MAN:hfc300_hb</pv_name>
+    <x>560</x>
+    <y>230</y>
+    <width>60</width>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_18</name>
+    <text>Flow</text>
+    <y>230</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_12</name>
+    <pv_name>ca://TGT:MEOP:HFC1_FI</pv_name>
+    <x>120</x>
+    <y>230</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_19</name>
+    <text>Flow Temp</text>
+    <y>250</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_13</name>
+    <pv_name>ca://TGT:MEOP:HFC1_TI</pv_name>
+    <x>120</x>
+    <y>250</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_20</name>
+    <text>Valve Pos</text>
+    <y>270</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_14</name>
+    <pv_name>ca://TGT:MEOP:HFC1_VP</pv_name>
+    <x>120</x>
+    <y>270</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_21</name>
+    <text>Setpoint</text>
+    <y>290</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_15</name>
+    <pv_name>ca://TGT:MEOP:HFC1_SP_IMP</pv_name>
+    <x>120</x>
+    <y>290</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_22</name>
+    <text>System State</text>
+    <y>310</y>
+    <width>150</width>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>Text Update_16</name>
+    <pv_name>ca://TGT:MEOP:HFC1_SS</pv_name>
+    <x>120</x>
+    <y>310</y>
+    <format>2</format>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>Label_23</name>
+    <text>Setpoint</text>
+    <y>370</y>
+    <width>150</width>
+  </widget>
+  <widget type="spinner" version="2.0.0">
+    <name>Spinner</name>
+    <pv_name>ca://TGT:MEOP:HFC1_SP</pv_name>
+    <x>110</x>
+    <y>370</y>
+    <width>120</width>
+  </widget>
+</display>
