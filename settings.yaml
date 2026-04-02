@@ -570,7 +570,6 @@ hfc300:
       EGU: 'SLM'
     HFC1_VP:
       DESC: 'HFC300 Valve Position'
-      PREC: 0
     HFC1_SP:
       DESC: 'HFC300 Flow Setpoint'
       PREC: 3
