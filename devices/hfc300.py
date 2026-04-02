@@ -13,10 +13,12 @@ class Device(TelnetDevice):
 
     def _create_pvs(self):
         """Create PVs for each channel"""
-        mode_list = [
-            ['Default', 0], ['Auto', 0], ['Hold', 0], ['Shut', 0],
-            ['Purge', 0], ['Variable', 0], ['Error', 0]
-        ]
+        #mode_list = [
+        #    ['Default', 0], ['Auto', 0], ['Hold', 0], ['Shut', 0],
+        #    ['Purge', 0], ['Variable', 0], ['Error', 0]
+        #]
+        mode_list = ['Default','Auto','Hold','Shut','Purge','Variable','Error']
+
 
         for channel in self._skip_none_channels():
             self.pvs[channel + "_FI"] = builder.aIn(channel + "_FI", **self.sevr)          # Flow
