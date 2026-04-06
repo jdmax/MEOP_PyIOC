@@ -236,7 +236,7 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
                         f'{auto_label:<{col_auto}}', auto_attr)
             safe_addstr(win, row, 1+col_name+col_st+col_auto, last_line)
 
-    draw_help(win, [('↑↓','select'),('s','start'),('x','stop'),
+    draw_help(win, [('↑↓','select'),('↵','pv list'),('s','start'),('x','stop'),
                     ('r','restart'),('l','logs'),('a','attach'),
                     ('S','start all'),('X','stop all'),('q','quit')])
     draw_status(win, f'  {status_msg}   (auto-refresh {REFRESH_SECS}s)')
@@ -409,7 +409,7 @@ def pv_view(stdscr, settings, name, prefix):
     while True:
         now = time.monotonic()
         if now - last_fetch >= REFRESH_SECS:
-            pv_list   = pv_names_from_log(lp, prefix)
+            pv_list   = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
             pv_vals   = fetch_pv_values(pv_list)
             last_fetch = now
             ts         = time.strftime('%H:%M:%S')
