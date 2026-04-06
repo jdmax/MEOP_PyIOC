@@ -6,6 +6,7 @@ IOC Monitor — interactive curses TUI for MEOP IOC screen sessions.
 
 Keys (main view):
     ↑ / ↓       Select IOC
+    Enter       View PVs for selected IOC
     s           Start selected IOC
     x           Stop  selected IOC
     r           Restart selected IOC
@@ -15,17 +16,21 @@ Keys (main view):
     X           Stop  ALL IOCs
     q / Esc     Quit
 
-Keys (log view):
+Keys (log / PV view):
     ↑ / ↓       Scroll
-    q / Esc / l Back to main view
+    f           Force refresh (PV view)
+    q / Esc     Back to main view
 """
 
+import asyncio
 import curses
 import os
+import re
 import subprocess
 import sys
 import time
 
+import aioca
 import yaml
 from screenutils import Screen
 
@@ -347,6 +352,124 @@ def do_attach(stdscr, name):
     suspended(stdscr, lambda: subprocess.run(['screen', '-r', name]))
 
 
+# ── PV helpers ────────────────────────────────────────────────────────────────
+def pv_names_from_log(path, prefix):
+    """Extract PV names from an IOC log file (same approach as ioc_manager)."""
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, errors='replace') as f:
+            content = f.read()
+        found = re.findall(rf'({re.escape(prefix)}[^\s]+)', content)
+        # Deduplicate while preserving order
+        seen, out = set(), []
+        for pv in found:
+            if pv not in seen:
+                seen.add(pv)
+                out.append(pv)
+        return out
+    except OSError:
+        return []
+
+def fetch_pv_values(pv_names):
+    """Return a dict {pv_name: value_str} using aioca.caget."""
+    if not pv_names:
+        return {}
+
+    async def _fetch():
+        results = await aioca.caget(pv_names, timeout=2.0, throw=False)
+        out = {}
+        for name, val in zip(pv_names, results):
+            if isinstance(val, aioca.CANothing):
+                out[name] = '(disconnected)'
+            elif hasattr(val, '__len__') and not isinstance(val, str):
+                out[name] = str(list(val))
+            else:
+                out[name] = str(val)
+        return out
+
+    try:
+        return asyncio.run(_fetch())
+    except Exception as e:
+        return {n: f'(error: {e})' for n in pv_names}
+
+
+# ── PV view ────────────────────────────────────────────────────────────────────
+def pv_view(stdscr, settings, name, prefix):
+    """Full-screen view of all PVs for one IOC with live values."""
+    curses.curs_set(0)
+    scroll    = 0
+    pv_vals   = {}
+    status    = 'Fetching…'
+    last_fetch = 0.0
+
+    lp      = log_path(settings, name)
+    pv_list = pv_names_from_log(lp, prefix)
+
+    while True:
+        now = time.monotonic()
+        if now - last_fetch >= REFRESH_SECS:
+            pv_list   = pv_names_from_log(lp, prefix)
+            pv_vals   = fetch_pv_values(pv_list)
+            last_fetch = now
+            ts         = time.strftime('%H:%M:%S')
+            status     = f'Updated {ts}  ({len(pv_list)} PVs)' if pv_list else 'No PVs found in log'
+
+        h, w = stdscr.getmaxyx()
+        stdscr.erase()
+        draw_title(stdscr, f' {prefix} — PVs: {name} ')
+
+        if not pv_list:
+            safe_addstr(stdscr, 2, 2, 'No PVs found. Is the IOC running?',
+                        curses.color_pair(C_STOPPED))
+        else:
+            col_pv  = max(len(p) for p in pv_list) + 2
+            col_val = max(w - col_pv - 4, 10)
+
+            # Column header
+            fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
+            safe_addstr(stdscr, 1, 1,
+                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}'[:w - 2],
+                        curses.color_pair(C_HEADER) | curses.A_BOLD)
+
+            view_rows  = h - 4
+            max_scroll = max(0, len(pv_list) - view_rows)
+            scroll     = min(scroll, max_scroll)
+
+            for i, pv in enumerate(pv_list[scroll:scroll + view_rows]):
+                row = i + 2
+                val = pv_vals.get(pv, '…')
+                if len(val) > col_val:
+                    val = val[:col_val - 3] + '...'
+                # Dim the prefix portion, highlight the suffix
+                pv_display = f'{pv:<{col_pv}}'
+                val_attr = (curses.color_pair(C_STOPPED)
+                            if 'disconnected' in val or 'error' in val
+                            else curses.color_pair(C_RUNNING))
+                safe_addstr(stdscr, row, 1, pv_display)
+                safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+
+        draw_help(stdscr, [('↑↓','scroll'),('f','refresh'),('q/Esc','back')])
+        draw_status(stdscr, f'  {status}')
+        stdscr.refresh()
+
+        stdscr.timeout(REFRESH_SECS * 1000)
+        key = stdscr.getch()
+
+        if key in (ord('q'), 27):
+            return
+        elif key == ord('f'):
+            last_fetch = 0.0          # force immediate refresh on next loop
+        elif key == curses.KEY_UP:
+            scroll = max(0, scroll - 1)
+        elif key == curses.KEY_DOWN:
+            scroll = min(max(0, len(pv_list) - (h - 4)), scroll + 1)
+        elif key == curses.KEY_PPAGE:
+            scroll = max(0, scroll - (h - 4))
+        elif key == curses.KEY_NPAGE:
+            scroll = min(max(0, len(pv_list) - (h - 4)), scroll + (h - 4))
+
+
 # ── Main TUI loop ──────────────────────────────────────────────────────────────
 def tui(stdscr):
     init_colors()
@@ -376,6 +499,9 @@ def tui(stdscr):
             selected = max(0, selected - 1)
         elif key == curses.KEY_DOWN:
             selected = min(len(names) - 1, selected + 1)
+        elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')):
+            pv_view(stdscr, settings, name, prefix)
+            status = f'Returned from PVs: {name}'
         elif key == ord('s'):
             status = suspended(stdscr, lambda: start_ioc(settings, name))
         elif key == ord('x'):
@@ -406,6 +532,9 @@ def tui(stdscr):
 
 def main():
     os.chdir(PROJECT_ROOT)
+    settings = load_settings()
+    os.environ['EPICS_CA_ADDR_LIST']      = settings['general']['epics_addr_list']
+    os.environ['EPICS_CA_AUTO_ADDR_LIST'] = 'NO'
     try:
         curses.wrapper(tui)
     except KeyboardInterrupt:
