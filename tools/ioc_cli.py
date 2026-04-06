@@ -280,6 +280,16 @@ def log_view(stdscr, settings, name, prefix):
         # timeout (key == -1): just refresh
 
 
+# ── Curses suspend/resume helper ──────────────────────────────────────────────
+def suspended(stdscr, fn):
+    """Run fn() with curses suspended, then restore the display."""
+    curses.endwin()
+    result = fn()
+    stdscr.refresh()
+    curses.doupdate()
+    return result
+
+
 # ── Confirmation popup ─────────────────────────────────────────────────────────
 def confirm_popup(stdscr, lines, confirm_label='Enter to confirm', cancel_label='Esc to cancel'):
     """
@@ -334,11 +344,7 @@ def do_attach(stdscr, name):
     )
     if not confirmed:
         return
-    curses.endwin()
-    subprocess.run(['screen', '-r', name])
-    # Reinitialise after returning from screen
-    stdscr.refresh()
-    curses.doupdate()
+    suspended(stdscr, lambda: subprocess.run(['screen', '-r', name]))
 
 
 # ── Main TUI loop ──────────────────────────────────────────────────────────────
@@ -371,11 +377,11 @@ def tui(stdscr):
         elif key == curses.KEY_DOWN:
             selected = min(len(names) - 1, selected + 1)
         elif key == ord('s'):
-            status = start_ioc(settings, name)
+            status = suspended(stdscr, lambda: start_ioc(settings, name))
         elif key == ord('x'):
-            status = stop_ioc(name)
+            status = suspended(stdscr, lambda: stop_ioc(name))
         elif key == ord('r'):
-            status = restart_ioc(settings, name)
+            status = suspended(stdscr, lambda: restart_ioc(settings, name))
         elif key == ord('l'):
             log_view(stdscr, settings, name, prefix)
             status = f'Returned from log: {name}'
@@ -386,14 +392,16 @@ def tui(stdscr):
             else:
                 status = f'{name} is not running'
         elif key == ord('S'):
-            msgs = []
-            for n in names:
-                if settings[n].get('autostart', False):
-                    msgs.append(start_ioc(settings, n))
-            status = ' | '.join(msgs) or 'Nothing to start'
+            def start_all():
+                msgs = [start_ioc(settings, n) for n in names
+                        if settings[n].get('autostart', False)]
+                return ' | '.join(msgs) or 'Nothing to start'
+            status = suspended(stdscr, start_all)
         elif key == ord('X'):
-            msgs = [stop_ioc(n) for n in names if ioc_running(n)]
-            status = ' | '.join(msgs) or 'Nothing running'
+            def stop_all():
+                msgs = [stop_ioc(n) for n in names if ioc_running(n)]
+                return ' | '.join(msgs) or 'Nothing running'
+            status = suspended(stdscr, stop_all)
 
 
 def main():
