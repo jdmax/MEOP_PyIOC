@@ -92,6 +92,7 @@ def start_ioc(settings, name):
     screen.send_commands('bash')
     screen.send_commands(f'python master_ioc.py -i {name}')
     screen.enable_logs(lp)
+    screen.send_commands('softioc.dbl()')
     return f'{name}: started'
 
 def stop_ioc(name):
@@ -449,7 +450,7 @@ def pv_view(stdscr, settings, name, prefix):
                 safe_addstr(stdscr, row, 1, pv_display)
                 safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
 
-        draw_help(stdscr, [('↑↓','scroll'),('f','refresh'),('q/Esc','back')])
+        draw_help(stdscr, [('↑↓','scroll'),('f','refresh'),('d','request dbl()'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
         stdscr.refresh()
 
@@ -460,6 +461,14 @@ def pv_view(stdscr, settings, name, prefix):
             return
         elif key == ord('f'):
             last_fetch = 0.0          # force immediate refresh on next loop
+        elif key == ord('d'):
+            if ioc_running(name):
+                Screen(name).send_commands('softioc.dbl()')
+                status = f'Sent dbl() to {name} — refreshing…'
+                time.sleep(1)         # give the IOC a moment to write to the log
+                last_fetch = 0.0
+            else:
+                status = f'{name} is not running'
         elif key == curses.KEY_UP:
             scroll = max(0, scroll - 1)
         elif key == curses.KEY_DOWN:
