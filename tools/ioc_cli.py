@@ -7,7 +7,7 @@ IOC Monitor — interactive curses TUI for MEOP IOC screen sessions.
 Keys (main view):
     ↑ / ↓       Select IOC
     s           Start selected IOC
-    x           Stop  selected IOCThis
+    x           Stop  selected IOC
     r           Restart selected IOC
     l           View log for selected IOC
     a           Attach to screen session (returns on detach)
@@ -169,11 +169,11 @@ def draw_help(win, keys):
 
 
 # ── Main list view ─────────────────────────────────────────────────────────────
-def draw_main(win, settings, names, selected, status_msg):
+def draw_main(win, settings, names, selected, status_msg, prefix):
     h, w = win.getmaxyx()
     win.erase()
 
-    draw_title(win, ' MEOP IOC Monitor ')
+    draw_title(win, f' {prefix} IOC Monitor ')
 
     # Column widths
     col_name = max(len(n) for n in names) + 2
@@ -239,7 +239,7 @@ def draw_main(win, settings, names, selected, status_msg):
 
 
 # ── Log view ───────────────────────────────────────────────────────────────────
-def log_view(stdscr, settings, name):
+def log_view(stdscr, settings, name, prefix):
     """Full-screen scrollable log viewer for one IOC. Returns when user exits."""
     curses.curs_set(0)
     scroll = 0
@@ -248,7 +248,7 @@ def log_view(stdscr, settings, name):
     while True:
         h, w = stdscr.getmaxyx()
         stdscr.erase()
-        draw_title(stdscr, f' Log: {name} ')
+        draw_title(stdscr, f' {prefix} — Log: {name} ')
 
         lines     = read_log_lines(log_path(settings, name), LOG_TAIL)
         view_rows = h - 4          # title + help + status
@@ -347,11 +347,12 @@ def tui(stdscr):
     curses.curs_set(0)
     settings = load_settings()
     names    = ioc_names(settings)
+    prefix   = settings['general']['prefix']
     selected = 0
     status   = 'Ready'
 
     while True:
-        draw_main(stdscr, settings, names, selected, status)
+        draw_main(stdscr, settings, names, selected, status, prefix)
 
         stdscr.timeout(REFRESH_SECS * 1000)
         key = stdscr.getch()
@@ -376,7 +377,7 @@ def tui(stdscr):
         elif key == ord('r'):
             status = restart_ioc(settings, name)
         elif key == ord('l'):
-            log_view(stdscr, settings, name)
+            log_view(stdscr, settings, name, prefix)
             status = f'Returned from log: {name}'
         elif key == ord('a'):
             if ioc_running(name):
