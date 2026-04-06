@@ -36,7 +36,7 @@ from screenutils import Screen
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SETTINGS_FILE = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), '..', 'settings.yaml')
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'settings.yaml')
 )
 PROJECT_ROOT = os.path.dirname(SETTINGS_FILE)
 
