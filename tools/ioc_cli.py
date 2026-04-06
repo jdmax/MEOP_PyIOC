@@ -7,7 +7,7 @@ IOC Monitor — interactive curses TUI for MEOP IOC screen sessions.
 Keys (main view):
     ↑ / ↓       Select IOC
     s           Start selected IOC
-    x           Stop  selected IOC
+    x           Stop  selected IOCThis
     r           Restart selected IOC
     l           View log for selected IOC
     a           Attach to screen session (returns on detach)
@@ -284,6 +284,8 @@ def log_view(stdscr, settings, name):
 def do_attach(stdscr, name):
     """Temporarily suspend curses, attach to screen session, resume on return."""
     curses.endwin()
+    print(f'\n  Attaching to screen session "{name}".')
+    print('  Use Ctrl+A then D to detach and return to the IOC monitor.\n')
     subprocess.run(['screen', '-r', name])
     # Reinitialise after returning from screen
     stdscr.refresh()
