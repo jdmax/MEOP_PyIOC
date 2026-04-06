@@ -38,6 +38,21 @@ class Device(TelnetDevice):
             self.settings['timeout']
         )
 
+    def _post_connect(self):
+        """Read initial output values after connection"""
+        self.read_outs()
+
+    def read_outs(self):
+        """Read and set OUT PVs at the start of the IOC"""
+        for pv_name in self._skip_none_channels():
+            try:
+                self.pvs[pv_name + '_MODE'].set(self.t.read_mode())
+                self.pvs[pv_name + '_SP'].set(self.t.read_setpoint())
+                self.pvs[pv_name + '_VP_MAN'].set(self.t.read_valve_manual())
+            except OSError:
+                print("Read out error on", pv_name)
+                self.reconnect()
+
     def do_sets(self, new_value, pv):
         """Set PV values to device"""
         pv_name = pv.replace(self.device_name + ':', '')
@@ -164,6 +179,26 @@ class DeviceConnection(TelnetConnection):
         except Exception as e:
             print(f"HFC300 mode read failed on {self.host}: {e}")
             raise OSError('HFC300 mode read')
+
+    def read_setpoint(self):
+        """Read flow setpoint in flow units (V4 command)"""
+        try:
+            data = self._send_command('V4')
+            m = self.float_regex.search(data)
+            return float(m.group(1))
+        except Exception as e:
+            print(f"HFC300 setpoint read failed on {self.host}: {e}")
+            raise OSError('HFC300 setpoint read')
+
+    def read_valve_manual(self):
+        """Read manual valve drive value (V28 command)"""
+        try:
+            data = self._send_command('V28')
+            m = self.int_regex.search(data)
+            return int(m.group(1))
+        except Exception as e:
+            print(f"HFC300 manual valve read failed on {self.host}: {e}")
+            raise OSError('HFC300 manual valve read')
 
     def set_mode(self, mode):
         """Set MFC mode (V1=N command) and read back"""
