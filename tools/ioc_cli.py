@@ -280,12 +280,61 @@ def log_view(stdscr, settings, name):
         # timeout (key == -1): just refresh
 
 
+# ── Confirmation popup ─────────────────────────────────────────────────────────
+def confirm_popup(stdscr, lines, confirm_label='Enter to confirm', cancel_label='Esc to cancel'):
+    """
+    Show a centred popup with the given lines of text.
+    Returns True if the user pressed Enter, False if Esc/q.
+    """
+    h, w      = stdscr.getmaxyx()
+    box_w     = min(max(len(l) for l in lines) + 6, w - 4)
+    hint      = f'  {confirm_label}   {cancel_label}  '
+    box_w     = max(box_w, len(hint) + 2)
+    box_h     = len(lines) + 4          # top border + blank + lines + hint + bottom border
+    by        = (h - box_h) // 2
+    bx        = (w - box_w) // 2
+
+    popup = curses.newwin(box_h, box_w, by, bx)
+    popup.attron(curses.color_pair(C_SELECTED))
+    popup.box()
+
+    for i, line in enumerate(lines):
+        safe_addstr(popup, i + 1, 2, line[:box_w - 4], curses.color_pair(C_SELECTED) | curses.A_BOLD)
+
+    # Hint bar at the bottom inside the box
+    safe_addstr(popup, box_h - 2, (box_w - len(hint)) // 2, hint,
+                curses.color_pair(C_HEADER))
+
+    popup.attroff(curses.color_pair(C_SELECTED))
+    popup.refresh()
+
+    curses.curs_set(0)
+    popup.timeout(-1)          # block until keypress
+    while True:
+        key = popup.getch()
+        if key in (curses.KEY_ENTER, ord('\n'), ord('\r')):
+            return True
+        if key in (27, ord('q')):                    # Esc or q
+            return False
+
+
 # ── Attach helper ──────────────────────────────────────────────────────────────
 def do_attach(stdscr, name):
-    """Temporarily suspend curses, attach to screen session, resume on return."""
+    """Show confirmation popup, then suspend curses and attach to screen session."""
+    confirmed = confirm_popup(
+        stdscr,
+        lines=[
+            f'Attaching to screen session: {name}',
+            '',
+            'To detach and return to the IOC monitor,',
+            'press  Ctrl+A  then  D',
+        ],
+        confirm_label='Enter to attach',
+        cancel_label='Esc to cancel',
+    )
+    if not confirmed:
+        return
     curses.endwin()
-    print(f'\n  Attaching to screen session "{name}".')
-    print('  Use Ctrl+A then D to detach and return to the IOC monitor.\n')
     subprocess.run(['screen', '-r', name])
     # Reinitialise after returning from screen
     stdscr.refresh()
