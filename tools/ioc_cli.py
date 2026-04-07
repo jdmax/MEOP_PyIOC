@@ -273,11 +273,8 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
                         f'{auto_label:<{col_auto}}', auto_attr)
             safe_addstr(win, row, 1+col_name+col_st+col_auto, last_line)
 
-    draw_help(win, [('↑↓','select'),('↵','pv list'),('s','start'),('x','stop'),
-                    ('r','restart'),('l','logs'),('a','attach'),
-                    ('S','start all'),('X','stop all'),
-                    ('m','mgr start'),('M','mgr stop'),('R','mgr restart'),
-                    ('?','help'),('q','quit')])
+    draw_help(win, [('s','start'),('x','stop'),('l','logs'),('a','attach'),
+                    ('m','mgr start'),('M','mgr stop'),('?','help'),('q','quit')])
     draw_status(win, f'  {status_msg}   (auto-refresh {REFRESH_SECS}s)')
     win.refresh()
 
