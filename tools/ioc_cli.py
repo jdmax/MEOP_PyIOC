@@ -193,9 +193,15 @@ def draw_help(win, keys):
     h, w = win.getmaxyx()
     row  = h - 2
     fill_row(win, row, curses.color_pair(C_HEADER))
+    # First pass: full descriptions. Second pass: 3-char abbreviations.
+    for max_desc in (None, 3):
+        hints = [f' {k}:{d[:max_desc]} ' if max_desc else f' {k}:{d} '
+                 for k, d in keys]
+        if sum(len(h) for h in hints) <= w - 2:
+            break
+
     x = 1
-    for key, desc in keys:
-        hint = f' {key}:{desc} '
+    for hint in hints:
         if x + len(hint) >= w - 1:
             break
         safe_addstr(win, row, x, hint, curses.color_pair(C_HEADER))
