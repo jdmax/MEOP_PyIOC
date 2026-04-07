@@ -17,6 +17,7 @@ Keys (main view):
     m           Start IOC manager
     M           Stop  IOC manager
     R           Restart IOC manager
+    ?           Show help page
     q / Esc     Quit
 
 Keys (log / PV view):
@@ -275,9 +276,95 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
     draw_help(win, [('↑↓','select'),('↵','pv list'),('s','start'),('x','stop'),
                     ('r','restart'),('l','logs'),('a','attach'),
                     ('S','start all'),('X','stop all'),
-                    ('m','mgr start'),('M','mgr stop'),('R','mgr restart'),('q','quit')])
+                    ('m','mgr start'),('M','mgr stop'),('R','mgr restart'),
+                    ('?','help'),('q','quit')])
     draw_status(win, f'  {status_msg}   (auto-refresh {REFRESH_SECS}s)')
     win.refresh()
+
+
+# ── Help view ──────────────────────────────────────────────────────────────────
+HELP_LINES = [
+    ('Main view', [
+        ('↑ / ↓',       'Select IOC'),
+        ('Enter',        'View live PV values for selected IOC'),
+        ('s',            'Start selected IOC'),
+        ('x',            'Stop selected IOC'),
+        ('r',            'Restart selected IOC'),
+        ('l',            'View log for selected IOC'),
+        ('a',            'Attach to screen session (Ctrl+A D to detach)'),
+        ('S',            'Start ALL autostart IOCs'),
+        ('X',            'Stop ALL running IOCs'),
+        ('m',            'Start IOC manager'),
+        ('M',            'Stop IOC manager'),
+        ('R',            'Restart IOC manager'),
+        ('?',            'Show this help page'),
+        ('q / Esc',      'Quit'),
+    ]),
+    ('Log view', [
+        ('↑ / ↓',        'Scroll one line'),
+        ('PgUp / PgDn',  'Scroll one page'),
+        ('l / q / Esc',  'Return to main view'),
+    ]),
+    ('PV view', [
+        ('↑ / ↓',        'Scroll one line'),
+        ('PgUp / PgDn',  'Scroll one page'),
+        ('f',            'Force immediate refresh'),
+        ('d',            'Request dbl() from IOC (re-list PVs)'),
+        ('q / Esc',       'Return to main view'),
+    ]),
+]
+
+def help_view(stdscr, prefix):
+    """Full-screen key reference. Returns when user exits."""
+    curses.curs_set(0)
+    scroll = 0
+
+    # Build flat list of display lines
+    content = []
+    for section, entries in HELP_LINES:
+        content.append(('header', section))
+        for key, desc in entries:
+            content.append(('entry', key, desc))
+        content.append(('blank',))
+
+    while True:
+        h, w = stdscr.getmaxyx()
+        stdscr.erase()
+        draw_title(stdscr, f' {prefix} — Help ')
+
+        view_rows  = h - 4
+        max_scroll = max(0, len(content) - view_rows)
+        scroll     = min(scroll, max_scroll)
+
+        col_key = 18
+        for i, item in enumerate(content[scroll:scroll + view_rows]):
+            row = i + 1
+            if item[0] == 'header':
+                safe_addstr(stdscr, row, 2, item[1],
+                            curses.color_pair(C_HEADER) | curses.A_BOLD)
+            elif item[0] == 'entry':
+                _, key, desc = item
+                safe_addstr(stdscr, row, 4,            f'{key:<{col_key}}',
+                            curses.color_pair(C_DIM))
+                safe_addstr(stdscr, row, 4 + col_key,  desc[:w - col_key - 6])
+
+        draw_help(stdscr, [('↑↓','scroll'),('q/Esc','back')])
+        draw_status(stdscr, f'  Key reference  —  {len(content)} lines')
+        stdscr.refresh()
+
+        stdscr.timeout(REFRESH_SECS * 1000)
+        key = stdscr.getch()
+
+        if key in (ord('q'), ord('?'), 27):
+            return
+        elif key == curses.KEY_UP:
+            scroll = max(0, scroll - 1)
+        elif key == curses.KEY_DOWN:
+            scroll = min(max_scroll, scroll + 1)
+        elif key == curses.KEY_PPAGE:
+            scroll = max(0, scroll - view_rows)
+        elif key == curses.KEY_NPAGE:
+            scroll = min(max_scroll, scroll + view_rows)
 
 
 # ── Log view ───────────────────────────────────────────────────────────────────
@@ -580,6 +667,8 @@ def tui(stdscr):
             status = suspended(stdscr, stop_manager)
         elif key == ord('R'):
             status = suspended(stdscr, restart_manager)
+        elif key == ord('?'):
+            help_view(stdscr, prefix)
 
 
 def main():
