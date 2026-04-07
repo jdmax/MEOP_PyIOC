@@ -327,6 +327,7 @@ def suspended(stdscr, fn):
     """Run fn() with curses suspended, then restore the display."""
     curses.endwin()
     result = fn()
+    stdscr.clear()
     stdscr.refresh()
     curses.doupdate()
     return result
