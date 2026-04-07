@@ -14,6 +14,9 @@ Keys (main view):
     a           Attach to screen session (returns on detach)
     S           Start ALL autostart IOCs
     X           Stop  ALL IOCs
+    m           Start IOC manager
+    M           Stop  IOC manager
+    R           Restart IOC manager
     q / Esc     Quit
 
 Keys (log / PV view):
@@ -40,8 +43,9 @@ SETTINGS_FILE = os.path.normpath(
 )
 PROJECT_ROOT = os.path.dirname(SETTINGS_FILE)
 
-REFRESH_SECS = 2          # auto-refresh interval
-LOG_TAIL     = 200        # max lines kept in log view
+REFRESH_SECS    = 2          # auto-refresh interval
+LOG_TAIL        = 200        # max lines kept in log view
+MANAGER_SCREEN  = 'ioc_manager'
 
 
 # ── Settings / log helpers ─────────────────────────────────────────────────────
@@ -105,6 +109,28 @@ def restart_ioc(settings, name):
     stop_ioc(name)
     time.sleep(1)
     return start_ioc(settings, name)
+
+def manager_running():
+    return Screen(MANAGER_SCREEN).exists
+
+def start_manager():
+    if manager_running():
+        return 'manager: already running'
+    screen = Screen(MANAGER_SCREEN, True)
+    screen.send_commands('bash')
+    screen.send_commands(f'python {os.path.join(PROJECT_ROOT, "ioc_manager.py")}')
+    return 'manager: started'
+
+def stop_manager():
+    if not manager_running():
+        return 'manager: not running'
+    subprocess.run(['screen', '-XS', MANAGER_SCREEN, 'kill'], check=False)
+    return 'manager: stopped'
+
+def restart_manager():
+    stop_manager()
+    time.sleep(1)
+    return start_manager()
 
 
 # ── Colour pair indices ────────────────────────────────────────────────────────
@@ -179,7 +205,14 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
     h, w = win.getmaxyx()
     win.erase()
 
-    draw_title(win, f' {prefix} IOC Monitor ')
+    mgr_label = 'MANAGER: running' if manager_running() else 'MANAGER: stopped'
+    _, w = win.getmaxyx()
+    title    = f' {prefix} IOC Monitor '
+    mgr_attr = (curses.color_pair(C_RUNNING) if manager_running()
+                else curses.color_pair(C_STOPPED))
+    draw_title(win, title)
+    safe_addstr(win, 0, w - len(mgr_label) - 2, mgr_label,
+                curses.color_pair(C_TITLE) | curses.A_BOLD | mgr_attr)
 
     # Column widths
     col_name = max(len(n) for n in names) + 2
@@ -239,7 +272,8 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
 
     draw_help(win, [('↑↓','select'),('↵','pv list'),('s','start'),('x','stop'),
                     ('r','restart'),('l','logs'),('a','attach'),
-                    ('S','start all'),('X','stop all'),('q','quit')])
+                    ('S','start all'),('X','stop all'),
+                    ('m','mgr start'),('M','mgr stop'),('R','mgr restart'),('q','quit')])
     draw_status(win, f'  {status_msg}   (auto-refresh {REFRESH_SECS}s)')
     win.refresh()
 
@@ -537,6 +571,12 @@ def tui(stdscr):
                 msgs = [stop_ioc(n) for n in names if ioc_running(n)]
                 return ' | '.join(msgs) or 'Nothing running'
             status = suspended(stdscr, stop_all)
+        elif key == ord('m'):
+            status = suspended(stdscr, start_manager)
+        elif key == ord('M'):
+            status = suspended(stdscr, stop_manager)
+        elif key == ord('R'):
+            status = suspended(stdscr, restart_manager)
 
 
 def main():
