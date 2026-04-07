@@ -93,6 +93,7 @@ def start_ioc(settings, name):
     lp = log_path(settings, name)
     os.makedirs(os.path.dirname(lp), exist_ok=True)
     screen = Screen(name, True)
+    time.sleep(0.5)
     screen.send_commands('bash')
     screen.send_commands(f'python master_ioc.py -i {name}')
     screen.enable_logs(lp)
@@ -117,6 +118,7 @@ def start_manager():
     if manager_running():
         return 'manager: already running'
     screen = Screen(MANAGER_SCREEN, True)
+    time.sleep(0.5)
     screen.send_commands('bash')
     screen.send_commands(f'cd {PROJECT_ROOT} && python ioc_manager.py')
     return 'manager: started'
