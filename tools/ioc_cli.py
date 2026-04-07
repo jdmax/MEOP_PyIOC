@@ -463,7 +463,7 @@ def pv_view(stdscr, settings, name, prefix):
             last_fetch = 0.0          # force immediate refresh on next loop
         elif key == ord('d'):
             if ioc_running(name):
-                Screen(name).send_commands('softioc.dbl()')
+                Screen(name).send_commands('dbl()')
                 status = f'Sent dbl() to {name} — refreshing…'
                 time.sleep(1)         # give the IOC a moment to write to the log
                 last_fetch = 0.0
