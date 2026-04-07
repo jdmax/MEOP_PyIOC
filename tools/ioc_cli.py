@@ -45,7 +45,7 @@ PROJECT_ROOT = os.path.dirname(SETTINGS_FILE)
 
 REFRESH_SECS    = 2          # auto-refresh interval
 LOG_TAIL        = 200        # max lines kept in log view
-MANAGER_SCREEN  = 'ioc_manager'
+MANAGER_SCREEN  = 'ioc-manager'
 
 
 # ── Settings / log helpers ─────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ def start_manager():
         return 'manager: already running'
     screen = Screen(MANAGER_SCREEN, True)
     screen.send_commands('bash')
-    screen.send_commands(f'python {os.path.join(PROJECT_ROOT, "ioc_manager.py")}')
+    screen.send_commands(f'cd {PROJECT_ROOT} && python ioc_manager.py')
     return 'manager: started'
 
 def stop_manager():
