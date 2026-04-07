@@ -1,4 +1,5 @@
 # J. Maxwell 2023
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -50,4 +51,4 @@ class DeviceConnection(TelnetConnection):
             return [float(x) for x in match.groups()]
 
         except Exception as e:
-            print(f"TPG26x read failed on {self.host}: {e}")
+            logging.error(f"TPG26x read failed on {self.host}: {e}")

@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -50,7 +51,7 @@ class Device(TelnetDevice):
                 self.pvs[pv_name + '_SP'].set(self.t.read_setpoint())
                 self.pvs[pv_name + '_VP_MAN'].set(self.t.read_valve_manual())
             except OSError:
-                print("Read out error on", pv_name)
+                logging.error(f"Read out error on {pv_name}")
                 self.reconnect()
 
     def do_sets(self, new_value, pv):
@@ -67,7 +68,7 @@ class Device(TelnetDevice):
                 result = self.t.set_valve_manual(new_value)
                 self.pvs[pv_name].set(result)
             else:
-                print('Error, control PV not categorized.', pv_name)
+                logging.error(f"Error, control PV not categorized: {pv_name}")
         except OSError:
             self.reconnect()
 
@@ -106,7 +107,7 @@ class DeviceConnection(TelnetConnection):
             data = self.tn.read_until(b'>', timeout=self.timeout).decode('ascii')
             return data
         except Exception as e:
-            print(f"HFC300 command '{command}' failed on {self.host}: {e}")
+            logging.error(f"HFC300 command '{command}' failed on {self.host}: {e}")
             raise OSError('HFC300 command failed')
 
     def read_flow(self):
@@ -116,7 +117,7 @@ class DeviceConnection(TelnetConnection):
             m = self.float_regex.search(data)
             return float(m.group(1))
         except Exception as e:
-            print(f"HFC300 flow read failed on {self.host}: {e}")
+            logging.error(f"HFC300 flow read failed on {self.host}: {e}")
             raise OSError('HFC300 flow read')
 
     def read_temperature(self):
@@ -126,7 +127,7 @@ class DeviceConnection(TelnetConnection):
             m = self.float_regex.search(data)
             return float(m.group(1))
         except Exception as e:
-            print(f"HFC300 temperature read failed on {self.host}: {e}")
+            logging.error(f"HFC300 temperature read failed on {self.host}: {e}")
             raise OSError('HFC300 temperature read')
 
     def read_system_state(self):
@@ -136,7 +137,7 @@ class DeviceConnection(TelnetConnection):
             m = self.int_regex.search(data)
             return int(m.group(1))
         except Exception as e:
-            print(f"HFC300 system state read failed on {self.host}: {e}")
+            logging.error(f"HFC300 system state read failed on {self.host}: {e}")
             raise OSError('HFC300 system state read')
 
     def read_impl_setpoint(self):
@@ -146,7 +147,7 @@ class DeviceConnection(TelnetConnection):
             m = self.float_regex.search(data)
             return float(m.group(1))
         except Exception as e:
-            print(f"HFC300 implemented setpoint read failed on {self.host}: {e}")
+            logging.error(f"HFC300 implemented setpoint read failed on {self.host}: {e}")
             raise OSError('HFC300 implemented setpoint read')
 
     _VP_BASE = {0x10: 'CLOSED', 0x20: 'PURGE', 0x30: 'HOLD', 0x40: 'VARIABLE', 0x50: 'AUTO'}
@@ -167,7 +168,7 @@ class DeviceConnection(TelnetConnection):
             m = self.hex_regex.search(data)
             return self._decode_valve_position(int(m.group(1), 16))
         except Exception as e:
-            print(f"HFC300 valve position read failed on {self.host}: {e}")
+            logging.error(f"HFC300 valve position read failed on {self.host}: {e}")
             raise OSError('HFC300 valve position read')
 
     def read_mode(self):
@@ -177,7 +178,7 @@ class DeviceConnection(TelnetConnection):
             m = self.int_regex.search(data)
             return int(m.group(1))
         except Exception as e:
-            print(f"HFC300 mode read failed on {self.host}: {e}")
+            logging.error(f"HFC300 mode read failed on {self.host}: {e}")
             raise OSError('HFC300 mode read')
 
     def read_setpoint(self):
@@ -187,7 +188,7 @@ class DeviceConnection(TelnetConnection):
             m = self.float_regex.search(data)
             return float(m.group(1))
         except Exception as e:
-            print(f"HFC300 setpoint read failed on {self.host}: {e}")
+            logging.error(f"HFC300 setpoint read failed on {self.host}: {e}")
             raise OSError('HFC300 setpoint read')
 
     def read_valve_manual(self):
@@ -197,7 +198,7 @@ class DeviceConnection(TelnetConnection):
             m = self.int_regex.search(data)
             return int(m.group(1))
         except Exception as e:
-            print(f"HFC300 manual valve read failed on {self.host}: {e}")
+            logging.error(f"HFC300 manual valve read failed on {self.host}: {e}")
             raise OSError('HFC300 manual valve read')
 
     def set_mode(self, mode):
@@ -208,7 +209,7 @@ class DeviceConnection(TelnetConnection):
             m = self.int_regex.search(data)
             return int(m.group(1))
         except Exception as e:
-            print(f"HFC300 mode set failed on {self.host}: {e}")
+            logging.error(f"HFC300 mode set failed on {self.host}: {e}")
             raise OSError('HFC300 mode set')
 
     def set_setpoint(self, value):
@@ -219,7 +220,7 @@ class DeviceConnection(TelnetConnection):
             m = self.float_regex.search(data)
             return float(m.group(1))
         except Exception as e:
-            print(f"HFC300 setpoint set failed on {self.host}: {e}")
+            logging.error(f"HFC300 setpoint set failed on {self.host}: {e}")
             raise OSError('HFC300 setpoint set')
 
     def set_valve_manual(self, value):
@@ -230,5 +231,5 @@ class DeviceConnection(TelnetConnection):
             m = self.int_regex.search(data)
             return int(m.group(1))
         except Exception as e:
-            print(f"HFC300 manual valve set failed on {self.host}: {e}")
+            logging.error(f"HFC300 manual valve set failed on {self.host}: {e}")
             raise OSError('HFC300 manual valve set')

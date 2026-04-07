@@ -4,7 +4,9 @@ import asyncio
 import yaml
 import argparse
 import importlib
+import logging
 import os
+import sys
 import datetime
 
 
@@ -14,6 +16,12 @@ async def main():
     loop on device coroutine and start interactive interface
     Device to be set up comes from command line argument choosing option from settings file
     """
+    logging.basicConfig(   # Set up logging
+        stream=sys.stdout,
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
     ioc, settings = load_settings()
 
     os.environ['EPICS_CA_ADDR_LIST'] = settings['general']['epics_addr_list']
@@ -86,7 +94,7 @@ def load_settings():
 
     with open(f'{folder}/settings.yaml') as f:  # Load settings from YAML files
         settings = yaml.load(f, Loader=yaml.FullLoader)
-    print(f"Loaded device settings from {folder}/settings.yaml.")
+    logging.info(f"Loaded device settings from {folder}/settings.yaml.")
 
     ioc_list = list(settings.keys())
     ioc_list.remove('general')
@@ -94,13 +102,13 @@ def load_settings():
     if args.i:
         ioc = args.i
     else:
-        print("Select IOC to run from these entries in settings file using -i flag:")
-        [print(f"  {x}") for x in ioc_list]
-        exit()
+        logging.error("Select IOC to run from these entries in settings file using -i flag:\n" +
+                      "\n".join(f"  {x}" for x in ioc_list))
+        sys.exit(1)
     if ioc not in ioc_list:
-        print("Given IOC not in settings file. Select from these:")
-        [print(f"  {x}") for x in ioc_list]
-        exit()
+        logging.error("Given IOC not in settings file. Select from these:\n" +
+                      "\n".join(f"  {x}" for x in ioc_list))
+        sys.exit(1)
 
     return ioc, settings
 

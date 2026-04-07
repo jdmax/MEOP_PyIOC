@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -64,7 +65,7 @@ class Device(TelnetDevice):
             elif 'Range' in pv_name:
                 self.pvs[pv_name].set(int(self.t.set_range(chan, new_value)))  # set returned value
             else:
-                print('Error, control PV not categorized.')
+                logging.error("Error, control PV not categorized.")
         except OSError:
             self.reconnect()
         return
@@ -122,7 +123,7 @@ class DeviceConnection(TelnetConnection):
             return values
 
         except Exception as e:
-            print(f"LS336 pid read failed on {self.host}: {e}")
+            logging.error(f"LS336 pid read failed on {self.host}: {e}")
             raise OSError('LS336 read')
 
     def set_pid(self, channel, P, I, D):
@@ -136,7 +137,7 @@ class DeviceConnection(TelnetConnection):
             return values
 
         except Exception as e:
-            print(f"LS336 pid set failed on {self.host}: {e}")
+            logging.error(f"LS336 pid set failed on {self.host}: {e}")
             raise OSError('LS336 pid set')
 
     def read_pid(self, channel):
@@ -149,7 +150,7 @@ class DeviceConnection(TelnetConnection):
             return values
 
         except Exception as e:
-            print(f"LS336 pid read failed on {self.host}: {e}")
+            logging.error(f"LS336 pid read failed on {self.host}: {e}")
             raise OSError('LS336 heater pid read')
 
     def read_heater(self, channel):
@@ -162,7 +163,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 heater read failed on {self.host}: {e}")
+            logging.error(f"LS336 heater read failed on {self.host}: {e}")
             raise OSError('LS336 heater read')
 
     def read_man_heater(self, channel):
@@ -175,7 +176,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 heater manual read failed on {self.host}: {e}")
+            logging.error(f"LS336 heater manual read failed on {self.host}: {e}")
             raise OSError('LS336 heater manual read')
 
     def set_man_heater(self, channel, value):
@@ -189,7 +190,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 heater manual set  failed on {self.host}: {e}")
+            logging.error(f"LS336 heater manual set  failed on {self.host}: {e}")
             raise OSError('LS336 heater manual set')
 
     def set_outmode(self, channel, mode, in_channel, powerup_on):
@@ -209,7 +210,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 outmode set  failed on {self.host}: {e}")
+            logging.error(f"LS336 outmode set  failed on {self.host}: {e}")
             raise OSError('LS336 outmode set')
 
     def read_outmode(self, channel):
@@ -225,7 +226,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 outmode read failed on {self.host}: {e}")
+            logging.error(f"LS336 outmode read failed on {self.host}: {e}")
             raise OSError('LS336 outmode read')
 
     def set_range(self, channel, hrange):
@@ -243,7 +244,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 range set failed on {self.host}: {e}")
+            logging.error(f"LS336 range set failed on {self.host}: {e}")
             raise OSError('LS336 range set')
 
     def read_range(self, channel):
@@ -259,7 +260,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 range read failed on {self.host}: {e}")
+            logging.error(f"LS336 range read failed on {self.host}: {e}")
             raise OSError('LS336 range read')
 
     def set_setpoint(self, channel, value):
@@ -277,7 +278,7 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 range set failed on {self.host}: {e}")
+            logging.error(f"LS336 range set failed on {self.host}: {e}")
             raise OSError('LS336 range set')
 
     def read_setpoint(self, channel):
@@ -293,5 +294,5 @@ class DeviceConnection(TelnetConnection):
             return values[0]
 
         except Exception as e:
-            print(f"LS336 setpoint set failed on {self.host}: {e}")
+            logging.error(f"LS336 setpoint set failed on {self.host}: {e}")
             raise OSError('LS336 setpoint set')

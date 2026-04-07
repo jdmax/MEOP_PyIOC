@@ -1,3 +1,4 @@
+import logging
 import re
 from .telnet_base import TelnetDevice, TelnetConnection
 from softioc import builder
@@ -29,7 +30,7 @@ class DeviceConnection(TelnetConnection):
             self.tn.write(bytes(f"PERCENT\n", 'ascii'))
             data = self.tn.read_until(b'\n', timeout=self.timeout).decode('ascii')
         except Exception as e:
-            print(f"AMI136 PERCENT mode set failed on {self.host}: {e}")
+            logging.error(f"AMI136 PERCENT mode set failed on {self.host}: {e}")
 
     def read_all(self):
         """Read level from device"""
@@ -42,5 +43,5 @@ class DeviceConnection(TelnetConnection):
                 raise OSError('AMI136 read')
             return values
         except Exception as e:
-            print(f"AMI136 read failed on {self.host}: {e}")
+            logging.error(f"AMI136 read failed on {self.host}: {e}")
             raise OSError('AMI136 read')

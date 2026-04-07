@@ -1,3 +1,4 @@
+import logging
 import psutil
 from softioc import builder
 from .base_device import BaseDevice
@@ -83,5 +84,5 @@ class Device(BaseDevice):
             return True
 
         except Exception as e:
-            print(f"Error in aggregate read: {e}")
+            logging.error(f"Error in aggregate read: {e}")
             return False

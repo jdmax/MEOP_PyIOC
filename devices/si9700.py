@@ -1,4 +1,5 @@
 # J. Maxwell 2023
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -33,7 +34,7 @@ class Device(TelnetDevice):
                 self.pvs[pv_name + '_SP'].set(setpoint)
                 self.pvs[pv_name + '_Mode'].set(mode)
             except OSError:
-                print("Read out error on", pv_name)
+                logging.error(f"Read out error on {pv_name}")
                 self.reconnect()
 
     def do_sets(self, new_value, pv):
@@ -49,7 +50,7 @@ class Device(TelnetDevice):
                 value = self.t.set_mode(self.pvs[pv_name].get())
                 self.pvs[pv_name].set(value)  # set returned value
             else:
-                print('Error, control PV not categorized.', pv_name)
+                logging.error(f"Error, control PV not categorized: {pv_name}")
         except OSError:
             self.reconnect()
         return
@@ -90,7 +91,7 @@ class DeviceConnection(TelnetConnection):
             # print(data)
             return [float(x) for x in match.groups()]
         except Exception as e:
-            print(f"SI9700 read failed on {self.host}: {e}")
+            logging.error(f"SI9700 read failed on {self.host}: {e}")
             raise OSError('SI9700 read')
 
     def read_status(self):
@@ -103,7 +104,7 @@ class DeviceConnection(TelnetConnection):
             # print(float(setpoint), float(heater), int(mode)-1)
             return float(setpoint), float(heater), int(mode) - 1
         except Exception as e:
-            print(f"SI9700 status read failed on {self.host}: {e}")
+            logging.error(f"SI9700 status read failed on {self.host}: {e}")
             raise OSError('SI9700 status read')
 
     def set_setpoint(self, value):
@@ -114,7 +115,7 @@ class DeviceConnection(TelnetConnection):
             # print("sp",setpoint)
             return setpoint
         except Exception as e:
-            print(f"SI9700 set failed on {self.host}: {e}")
+            logging.error(f"SI9700 set failed on {self.host}: {e}")
             raise OSError('SI9700 set')
 
     def set_mode(self, value):
@@ -125,5 +126,5 @@ class DeviceConnection(TelnetConnection):
             # print("mode",mode)
             return mode
         except Exception as e:
-            print(f"SI9700 set failed on {self.host}: {e}")
+            logging.error(f"SI9700 set failed on {self.host}: {e}")
             raise OSError('SI9700 set')

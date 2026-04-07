@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -34,5 +35,5 @@ class DeviceConnection(TelnetConnection):
             ms = self.read_regex.findall(data)
             return [float(m) for m in ms]
         except Exception as e:
-            print(f"LS218 read failed on {self.host}: {e}")
+            logging.error(f"LS218 read failed on {self.host}: {e}")
             raise OSError('LS218 read')

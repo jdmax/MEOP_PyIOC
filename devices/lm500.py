@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -39,5 +40,5 @@ class DeviceConnection(TelnetConnection):
             return [float(x) for x in match.groups()]
 
         except Exception as e:
-            print(f"LM-500 read failed on {self.host}: {e}, {data}")
+            logging.error(f"LM-500 read failed on {self.host}: {e}, {data}")
             raise OSError('LM-500 read')

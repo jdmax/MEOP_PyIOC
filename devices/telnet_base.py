@@ -1,3 +1,4 @@
+import logging
 import telnetlib
 from .base_device import BaseDevice
 
@@ -35,4 +36,4 @@ class TelnetConnection:
         try:
             self.tn = telnetlib.Telnet(self.host, port=self.port, timeout=self.timeout)
         except Exception as e:
-            print(f"Telnet connection failed on {self.host}: {e}")
+            logging.error(f"Telnet connection failed on {self.host}: {e}")

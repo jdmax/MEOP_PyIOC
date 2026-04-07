@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from softioc import builder
 from simple_pid import PID
 from .base_device import BaseDevice
@@ -154,7 +155,7 @@ class Device(BaseDevice):
                     self.remove_alarm(channel + "_PV")  # Fixed: clear alarms on success
 
                 except aioca.CANothing as e:
-                    print(f"PID CA error: {e}")
+                    logging.error(f"PID CA error: {e}")
                     self.set_alarm(channel + "_PV")  # Fixed: set alarm on CA error
                     return False
 
@@ -162,7 +163,7 @@ class Device(BaseDevice):
             return True
 
         except Exception as e:
-            print(f"PID control error: {e}")
+            logging.error(f"PID control error: {e}")
             self._handle_read_error()
             return False
 

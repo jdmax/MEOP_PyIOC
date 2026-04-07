@@ -1,5 +1,6 @@
 # devices/base_device.py
 from abc import ABC, abstractmethod
+import logging
 from softioc import builder, alarm
 
 
@@ -46,13 +47,13 @@ class BaseDevice(ABC):
             self.t = self._create_connection()
             self._post_connect()
         except Exception as e:
-            print(f"Failed connection on {self.settings['ip']}, {e}")
+            logging.error(f"Failed connection on {self.settings['ip']}, {e}")
 
     def reconnect(self):
         """Delete connection and attempt to reconnect"""
         if self.t:
             del self.t
-        print("Connection failed. Attempting reconnect.")
+        logging.warning("Connection failed. Attempting reconnect.")
         self.connect()
 
     def _post_connect(self):

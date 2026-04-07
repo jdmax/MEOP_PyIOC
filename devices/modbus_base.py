@@ -1,3 +1,4 @@
+import logging
 from pyModbusTCP.client import ModbusClient
 from .base_device import BaseDevice
 
@@ -26,7 +27,7 @@ class ModbusDevice(BaseDevice):
             self._handle_read_success()
             return True
         except (OSError, TypeError, AttributeError) as e:
-            print(e)
+            logging.error(e)
             self._handle_read_error()
             return False
 
@@ -46,7 +47,7 @@ class ModbusConnection:
         try:
             self.m = ModbusClient(host=self.host, port=int(self.port), unit_id=1, auto_open=True)
         except Exception as e:
-            print(f"Modbus connection failed on {self.host}: {e}")
+            logging.error(f"Modbus connection failed on {self.host}: {e}")
 
     def read_all(self, start=40, number=8):
         return self.read_registers(start, number)
@@ -56,7 +57,7 @@ class ModbusConnection:
         try:
             return self.m.read_input_registers(start, number)  # Default: 8 channels starting at 40
         except Exception as e:
-            print(f"Modbus read failed on {self.host}: {e}")
+            logging.error(f"Modbus read failed on {self.host}: {e}")
             raise OSError('Modbus read')
 
     def set_register(self, number, value):
@@ -66,5 +67,5 @@ class ModbusConnection:
             self.m.write_single_register(number, value)  # set as mV
             return True
         except Exception as e:
-            print(f"Modbus set failed on {self.host}: {e}")
+            logging.error(f"Modbus set failed on {self.host}: {e}")
             raise OSError('Modbus  set')

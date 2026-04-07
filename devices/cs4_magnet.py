@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -46,7 +47,7 @@ class Device(TelnetDevice):
                 self.pvs[pv_name + '_Sweep'].set(self.t.read_sweep())
                 self.pvs[pv_name + '_Heater'].set(self.t.read_heater())
             except OSError:
-                print("Read out error on", pv_name)
+                logging.error(f"Read out error on {pv_name}")
                 self.reconnect()
 
     def do_sets(self, new_value, pv):
@@ -71,7 +72,7 @@ class Device(TelnetDevice):
                 value = self.t.set_heater(self.pvs[p + '_Heater'].get())
                 self.pvs[pv_name].set(int(value))
             else:
-                print('Error, control PV not categorized.', pv_name)
+                logging.error(f"Error, control PV not categorized: {pv_name}")
         except OSError:
             self.reconnect()
 
@@ -126,7 +127,7 @@ class DeviceConnection(TelnetConnection):
             heater = True if b'1' in heat else False
             return heater, float(voltage), float(magnet), float(out), self.status_dec(sweep)
         except Exception as e:
-            print(f"CS-4 read statuses failed on {self.host}: {e}")
+            logging.error(f"CS-4 read statuses failed on {self.host}: {e}")
             raise OSError('CS-4 read status')
 
     def status_dec(self, stat):
@@ -138,7 +139,7 @@ class DeviceConnection(TelnetConnection):
         for key, value in status_map.items():
             if key in stat:
                 return value
-        print(f"CS-4 status decision failed on {self.host}")
+        logging.error(f"CS-4 status decision failed on {self.host}")
         raise OSError('CS-4 status decision')
 
     def set_remote(self, value):
@@ -149,7 +150,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.any_regex], timeout=self.timeout)
             return str(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 set remote failed on {self.host}: {e}")
+            logging.error(f"CS-4 set remote failed on {self.host}: {e}")
             raise OSError('CS-4 set')
 
     def read_ulim(self):
@@ -159,7 +160,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 read ulim failed on {self.host}: {e}")
+            logging.error(f"CS-4 read ulim failed on {self.host}: {e}")
             raise OSError('CS-4 read')
 
     def read_llim(self):
@@ -169,7 +170,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.current_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 read llim failed on {self.host}: {e}")
+            logging.error(f"CS-4 read llim failed on {self.host}: {e}")
             raise OSError('CS-4 read')
 
     def read_heater(self):
@@ -179,7 +180,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.heater_read_regex], timeout=self.timeout)
             return b'1' in match.groups()[0]
         except Exception as e:
-            print(f"CS-4 read heater failed on {self.host}: {e}")
+            logging.error(f"CS-4 read heater failed on {self.host}: {e}")
             raise OSError('CS-4 read')
 
     def read_sweep(self):
@@ -189,7 +190,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.sweep_regex], timeout=self.timeout)
             return self.status_dec(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 read status failed on {self.host}: {e}")
+            logging.error(f"CS-4 read status failed on {self.host}: {e}")
             raise OSError('CS-4 read sweep')
 
     def set_ulim(self, value):
@@ -199,7 +200,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.ulim_set_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 set ulim failed on {self.host}: {e}")
+            logging.error(f"CS-4 set ulim failed on {self.host}: {e}")
             raise OSError('CS-4 ulim set')
 
     def set_llim(self, value):
@@ -209,7 +210,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.llim_set_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 set llim failed on {self.host}: {e}")
+            logging.error(f"CS-4 set llim failed on {self.host}: {e}")
             raise OSError('CS-4 llim set')
 
     def set_sweep(self, index):
@@ -219,7 +220,7 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.llim_set_regex], timeout=self.timeout)
             return float(match.groups()[0])
         except Exception as e:
-            print(f"CS-4 set sweep failed on {self.host}: {e}")
+            logging.error(f"CS-4 set sweep failed on {self.host}: {e}")
             raise OSError('CS-4 sweep set')
 
     def set_heater(self, value):
@@ -233,5 +234,5 @@ class DeviceConnection(TelnetConnection):
             i, match, data = self.tn.expect([self.heater_read_regex], timeout=self.timeout)
             return b'1' in match.groups()[0]
         except Exception as e:
-            print(f"CS-4 set heater failed on {self.host}: {e}")
+            logging.error(f"CS-4 set heater failed on {self.host}: {e}")
             raise OSError('CS-4 heater set')

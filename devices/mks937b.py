@@ -1,3 +1,4 @@
+import logging
 import re
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
@@ -42,5 +43,5 @@ class DeviceConnection(TelnetConnection):
             return values
 
         except Exception as e:
-            print(f"MKS 937B read failed on {self.host}: {e}")
+            logging.error(f"MKS 937B read failed on {self.host}: {e}")
             raise OSError('MKS 937B read')

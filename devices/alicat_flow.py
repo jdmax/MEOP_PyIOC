@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from .base_device import BaseDevice
 from alicat import FlowController
@@ -49,7 +50,7 @@ class Device(BaseDevice):
             await self.t.set_gas_type(self.settings['gas_type'])
             await self._async_read_outs()
         except OSError as e:
-            print(f"Post-connect failed on {self.settings['ip']}: {e}")
+            logging.error(f"Post-connect failed on {self.settings['ip']}: {e}")
 
     async def _async_read_outs(self):
         for pv_name in self._skip_none_channels():
@@ -57,7 +58,7 @@ class Device(BaseDevice):
                 data = await self.t.read_all()
                 self.pvs[pv_name + '_SP'].set(data['setpoint'])
             except OSError:
-                print("Read out error on", pv_name)
+                logging.error(f"Read out error on {pv_name}")
                 self.reconnect()
 
     def do_sets(self, new_value, pv):
@@ -67,7 +68,7 @@ class Device(BaseDevice):
             if '_SP' in pv_name:
                 asyncio.ensure_future(self.t.set_flow_rate(new_value))
             else:
-                print('Error, control PV not categorized.', pv_name)
+                logging.error(f"Error, control PV not categorized: {pv_name}")
         except OSError:
             self.reconnect()
 
@@ -84,7 +85,7 @@ class DeviceConnection():
         try:
             self.fc = FlowController(f'{self.host}:{self.port}')
         except Exception as e:
-            print(f"Alicat Connection failed on {self.host}: {e}")
+            logging.error(f"Alicat Connection failed on {self.host}: {e}")
             raise
 
     async def read_all(self):
@@ -95,7 +96,7 @@ class DeviceConnection():
             data = await self.fc.get()
             return data
         except Exception as e:
-            print(f"Alicat read failed on {self.host}: {e}")
+            logging.error(f"Alicat read failed on {self.host}: {e}")
             raise OSError('Alicat read')
 
     async def set_flow_rate(self, rate):

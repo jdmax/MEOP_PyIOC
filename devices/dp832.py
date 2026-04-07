@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 from softioc import builder, alarm
@@ -36,7 +37,7 @@ class Device(TelnetDevice):
                 value = self.t.set_state(str(i+1), self.pvs[pv_name].get())
                 self.pvs[pv_name + '_Mode'].set(int(value))  # set returned value
             except OSError:
-                print("Read out error on", pv_name)
+                logging.error(f"Read out error on {pv_name}")
                 self.reconnect()
 
 
@@ -55,7 +56,7 @@ class Device(TelnetDevice):
                 value = self.t.set_state(chan, new_value)
                 self.pvs[pv_name].set(int(value))  # set returned value
             else:
-                print('Error, control PV not categorized.', pv_name)
+                logging.error(f"Error, control PV not categorized: {pv_name}")
         except OSError:
             self.reconnect()
         return
@@ -101,7 +102,7 @@ class DeviceConnection(TelnetConnection):
             return values   # return voltage, current as list
 
         except Exception as e:
-            print(f"DP832 read sp failed on {self.host}: {e},{command},{data}")
+            logging.error(f"DP832 read sp failed on {self.host}: {e},{command},{data}")
             raise OSError('DP832 read sp')
 
     def read(self, channel):
@@ -115,7 +116,7 @@ class DeviceConnection(TelnetConnection):
             return values   # return voltage, current as list
 
         except Exception as e:
-            print(f"DP832 read failed on {self.host}: {e}, {command},{data}")
+            logging.error(f"DP832 read failed on {self.host}: {e}, {command},{data}")
             raise OSError('DP832 read')
 
     def set(self, channel, voltage, current):
@@ -126,7 +127,7 @@ class DeviceConnection(TelnetConnection):
             return self.read_sp(channel)   # return voltage, current as list
 
         except Exception as e:
-            print(f"DP832 set failed on {self.host}: {e}")
+            logging.error(f"DP832 set failed on {self.host}: {e}")
             raise OSError('DP832 set')
 
     def read_state(self, channel):
@@ -141,7 +142,7 @@ class DeviceConnection(TelnetConnection):
             return state
 
         except Exception as e:
-            print(f"DP832 outmode read failed on {self.host}: {e}")
+            logging.error(f"DP832 outmode read failed on {self.host}: {e}")
             raise OSError('DP832 outmode read')
 
     def set_state(self, channel, state):
@@ -156,5 +157,5 @@ class DeviceConnection(TelnetConnection):
             time.sleep(0.2)
             return self.read_state(channel)
         except Exception as e:
-            print(f"DP832 out set failed on {self.host}: {e}")
+            logging.error(f"DP832 out set failed on {self.host}: {e}")
             raise OSError('DP832 out set')

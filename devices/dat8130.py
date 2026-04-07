@@ -1,3 +1,4 @@
+import logging
 from .modbus_base import ModbusDevice, ModbusConnection
 from softioc import builder
 
@@ -77,7 +78,7 @@ class DeviceConnection(ModbusConnection):
             values = self.m.read_coils(504, 8)  # read all 8 channels starting at 40
             return values
         except Exception as e:
-            print(f"Datexel 8130 read failed on {self.host}: {e}")
+            logging.error(f"Datexel 8130 read failed on {self.host}: {e}")
             raise OSError('8130 read')
 
     def read_coils(self):
@@ -85,7 +86,7 @@ class DeviceConnection(ModbusConnection):
         try:
             return self.m.read_coils(488, 4)
         except Exception as e:
-            print(f"Datexel 8130 read failed on {self.host}: {e}")
+            logging.error(f"Datexel 8130 read failed on {self.host}: {e}")
             raise OSError('8130 read')
 
     def set_coil(self, num, state):
@@ -94,5 +95,5 @@ class DeviceConnection(ModbusConnection):
             self.m.write_single_coil(488 + num, state)
             return self.read_coils()
         except Exception as e:
-            print(f"Datexel 8130 write failed on {self.host}: {e}")
+            logging.error(f"Datexel 8130 write failed on {self.host}: {e}")
             raise OSError('8130 write')
