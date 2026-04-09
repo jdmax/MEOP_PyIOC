@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-IOC Monitor — interactive curses TUI for MEOP IOC screen sessions.
+IOC Commander — interactive curses TUI for Epics IOC screen sessions.
 
     python tools/ioc_cli.py
 
