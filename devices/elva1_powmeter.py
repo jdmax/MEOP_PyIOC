@@ -1,3 +1,6 @@
+# Not yet tested. Uses RS232, not GPIB!
+
+
 import logging
 from softioc import builder
 from .telnet_base import TelnetDevice, TelnetConnection
