@@ -569,14 +569,37 @@ bga244:
       DESC: 'Block Temperature'
       PREC: 2
       EGU: 'C'
+eip_counter:
+  module: 'devices.eip_counter'
+  autostart: False          # Should IOC Manager try to start this?
+  ip: '129.57.160.5'       # Prologix GPIB controller
+  port: '1234'
+  timeout: 4
+  delay: 0.4
+  addr: 19                 # EIP 588C GPIB address
+  band: 3
+  subband: 8
+  cent_freq: 136.6         # Center frequency in GHz
+  rate: 500                # Sample rate in ms
+  channels:
+    - uWave_FI
+  records:
+    uWave_FI:
+      DESC: 'Microwave Frequency'
+      PREC: 6
+      EGU: 'GHz'
+      HIHI: 140
+      HIGH: 138
+      LOW: 135
+      LOLO: 134
 elva1_powmeter:
   module: 'devices.elva1_powmeter'
   autostart: False          # Should IOC Manager try to start this?
-  ip: '0.0.0.0'            # TODO: set IP
+  ip: '129.57.160.11'      # Serial-to-Ethernet adapter
   port: '23'
-  timeout: 5
-  delay: 1
-  freq: 94.0                # Center frequency in GHz
+  timeout: 2
+  delay: 0.4
+  freq: 140                 # Center frequency in GHz
   averaging: 50             # Number of measurement points to average (1-250)
   channels:
     - uWave_PWR
