@@ -1,0 +1,4 @@
+[submodule "devices"]
+	path = devices
+	url = https://github.com/jdmax/epics-device-lib.git
+	branch = master
