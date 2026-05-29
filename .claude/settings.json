@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(git ls-remote https://github.com/jdmax/epics-device-lib.git HEAD)",
+      "PowerShell($tempDir = \"$env:TEMP\\\\epics-device-lib-check\"; if \\(Test-Path $tempDir\\) { Remove-Item $tempDir -Recurse -Force }; git clone --depth 1 https://github.com/jdmax/epics-device-lib.git $tempDir 2>&1; Get-ChildItem $tempDir -Name)",
+      "PowerShell(Get-ChildItem \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\" -Name)",
+      "PowerShell(Get-Content \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\\\\tpg_26x.py\" | Select-Object -First 10)",
+      "PowerShell(Get-Content \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\\\\dp832.py\" | Select-Object -First 10)",
+      "PowerShell(Get-Content \"$env:TEMP\\\\epics-device-lib-check\\\\__init__.py\"; Write-Host \"---\"; Get-Content \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\\\\__init__.py\")",
+      "PowerShell(Select-String -Path \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\\\\bga244.py\", \"$env:TEMP\\\\epics-device-lib-check\\\\instruments\\\\pid_controller.py\" -Pattern \"^from \\\\.\")",
+      "PowerShell(cd \"$env:TEMP\\\\epics-device-lib-check\"; git add instruments/bga244.py instruments/hfc300.py instruments/pid_controller.py instruments/elva1_powmeter.py instruments/eip_counter.py instruments/alicat_flow.py; git status)",
+      "PowerShell(cd \"$env:TEMP\\\\epics-device-lib-check\"; git push origin master 2>&1)",
+      "PowerShell(git checkout -b devices-submodule)",
+      "PowerShell(git rm -r --cached devices/)",
+      "PowerShell(git submodule add -b master https://github.com/jdmax/epics-device-lib.git devices 2>&1)",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\jmaxwell\\\\VSCode_Projects\\\\MEOP_PyIOC\\\\settings.yaml\" -Raw\\) -replace \"module: 'devices\\\\.\\(?!instruments\\\\.\\)\", \"module: 'devices.instruments.\" | Set-Content \"c:\\\\Users\\\\jmaxwell\\\\VSCode_Projects\\\\MEOP_PyIOC\\\\settings.yaml\" -Encoding utf8 -NoNewline; Write-Host \"Done\")",
+      "PowerShell(git add .gitmodules devices logic_devices/  settings.yaml)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\jmaxwell\\VSCode_Projects\\MEOP_PyIOC\\devices"
+    ]
+  }
+}
