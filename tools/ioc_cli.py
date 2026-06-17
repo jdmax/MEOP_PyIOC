@@ -7,6 +7,7 @@ IOC Commander — interactive curses TUI for Epics IOC screen sessions.
 Keys (main view):
     ↑ / ↓       Select IOC
     Enter       View PVs for selected IOC
+    p           View all active PVs across all running IOCs
     s           Start selected IOC
     x           Stop  selected IOC
     r           Restart selected IOC
@@ -274,7 +275,7 @@ def draw_main(win, settings, names, selected, status_msg, prefix):
             safe_addstr(win, row, 1+col_name+col_st+col_auto, last_line)
 
     draw_help(win, [('s','start'),('x','stop'),('l','logs'),('a','attach'),
-                    ('m','mgr start'),('M','mgr stop'),('?','help'),('q','quit')])
+                    ('p','all PVs'),('m','mgr start'),('M','mgr stop'),('?','help'),('q','quit')])
     draw_status(win, f'  {status_msg}   (auto-refresh {REFRESH_SECS}s)')
     win.refresh()
 
@@ -284,6 +285,7 @@ HELP_LINES = [
     ('Main view', [
         ('↑ / ↓',       'Select IOC'),
         ('Enter',        'View live PV values for selected IOC'),
+        ('p',            'View all active PVs across all running IOCs'),
         ('s',            'Start selected IOC'),
         ('x',            'Stop selected IOC'),
         ('r',            'Restart selected IOC'),
@@ -302,11 +304,17 @@ HELP_LINES = [
         ('PgUp / PgDn',  'Scroll one page'),
         ('l / q / Esc',  'Return to main view'),
     ]),
-    ('PV view', [
+    ('PV view (single IOC)', [
         ('↑ / ↓',        'Scroll one line'),
         ('PgUp / PgDn',  'Scroll one page'),
         ('f',            'Force immediate refresh'),
         ('d',            'Request dbl() from IOC (re-list PVs)'),
+        ('q / Esc',       'Return to main view'),
+    ]),
+    ('All PVs view', [
+        ('↑ / ↓',        'Scroll one line'),
+        ('PgUp / PgDn',  'Scroll one page'),
+        ('f',            'Force immediate refresh'),
         ('q / Esc',       'Return to main view'),
     ]),
 ]
@@ -600,6 +608,101 @@ def pv_view(stdscr, settings, name, prefix):
             scroll = min(max(0, len(pv_list) - (h - 4)), scroll + (h - 4))
 
 
+# ── All-IOCs PV view ──────────────────────────────────────────────────────────
+def all_pvs_view(stdscr, settings, names, prefix):
+    """Full-screen view of PVs from all currently running IOCs, grouped by IOC."""
+    curses.curs_set(0)
+    scroll     = 0
+    status     = 'Fetching…'
+    last_fetch = 0.0
+    entries    = []   # list of ('header', ioc_name) | ('pv', ioc_name, pv_name)
+    pv_vals    = {}
+
+    while True:
+        now = time.monotonic()
+        if now - last_fetch >= REFRESH_SECS:
+            running = [n for n in names if ioc_running(n)]
+            ioc_pv_map = {}
+            all_pvs = []
+            for n in running:
+                lp  = log_path(settings, n)
+                pvs = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
+                ioc_pv_map[n] = pvs
+                all_pvs.extend(pvs)
+
+            pv_vals = fetch_pv_values(all_pvs)
+
+            entries = []
+            for n in running:
+                entries.append(('header', n))
+                for pv in ioc_pv_map.get(n, []):
+                    entries.append(('pv', n, pv))
+
+            last_fetch = now
+            ts     = time.strftime('%H:%M:%S')
+            status = (f'Updated {ts}  ({len(running)} IOCs, {len(all_pvs)} PVs)'
+                      if running else 'No running IOCs found')
+
+        h, w = stdscr.getmaxyx()
+        stdscr.erase()
+        draw_title(stdscr, f' {prefix} — All Active PVs ')
+
+        if not entries:
+            safe_addstr(stdscr, 2, 2, 'No running IOCs found.',
+                        curses.color_pair(C_STOPPED))
+        else:
+            pv_names_only = [e[2] for e in entries if e[0] == 'pv']
+            col_pv  = (max(len(p) for p in pv_names_only) + 2) if pv_names_only else 30
+            col_val = max(w - col_pv - 4, 10)
+
+            fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
+            safe_addstr(stdscr, 1, 1,
+                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}'[:w - 2],
+                        curses.color_pair(C_HEADER) | curses.A_BOLD)
+
+            view_rows  = h - 4
+            max_scroll = max(0, len(entries) - view_rows)
+            scroll     = min(scroll, max_scroll)
+
+            for i, entry in enumerate(entries[scroll:scroll + view_rows]):
+                row = i + 2
+                if entry[0] == 'header':
+                    label = f'  [{entry[1]}]'
+                    fill_row(stdscr, row, curses.color_pair(C_DIM))
+                    safe_addstr(stdscr, row, 1, label[:w - 2],
+                                curses.color_pair(C_DIM) | curses.A_BOLD)
+                else:
+                    _, _, pv = entry
+                    val = pv_vals.get(pv, '…')
+                    if len(val) > col_val:
+                        val = val[:col_val - 3] + '...'
+                    val_attr = (curses.color_pair(C_STOPPED)
+                                if 'disconnected' in val or 'error' in val
+                                else curses.color_pair(C_RUNNING))
+                    safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}')
+                    safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+
+        draw_help(stdscr, [('↑↓','scroll'),('PgUp/Dn','page'),('f','refresh'),('q/Esc','back')])
+        draw_status(stdscr, f'  {status}')
+        stdscr.refresh()
+
+        stdscr.timeout(REFRESH_SECS * 1000)
+        key = stdscr.getch()
+
+        if key in (ord('q'), 27):
+            return
+        elif key == ord('f'):
+            last_fetch = 0.0
+        elif key == curses.KEY_UP:
+            scroll = max(0, scroll - 1)
+        elif key == curses.KEY_DOWN:
+            scroll = min(max(0, len(entries) - (h - 4)), scroll + 1)
+        elif key == curses.KEY_PPAGE:
+            scroll = max(0, scroll - (h - 4))
+        elif key == curses.KEY_NPAGE:
+            scroll = min(max(0, len(entries) - (h - 4)), scroll + (h - 4))
+
+
 # ── Main TUI loop ──────────────────────────────────────────────────────────────
 def tui(stdscr):
     init_colors()
@@ -632,6 +735,9 @@ def tui(stdscr):
         elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')):
             pv_view(stdscr, settings, name, prefix)
             status = f'Returned from PVs: {name}'
+        elif key == ord('p'):
+            all_pvs_view(stdscr, settings, names, prefix)
+            status = 'Returned from all PVs view'
         elif key == ord('s'):
             status = suspended(stdscr, lambda: start_ioc(settings, name))
         elif key == ord('x'):
