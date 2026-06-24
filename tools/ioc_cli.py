@@ -39,6 +39,12 @@ import aioca
 import yaml
 from screenutils import Screen
 
+# A single event loop shared for all aioca calls.  asyncio.run() closes the
+# loop after each call, which causes aioca's CA background threads to crash
+# on cleanup (call_soon_threadsafe on a closed loop).
+_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(_loop)
+
 # ── Paths ──────────────────────────────────────────────────────────────────────
 SETTINGS_FILE = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'settings.yaml')
@@ -519,7 +525,7 @@ def fetch_pv_values(pv_names):
         return out
 
     try:
-        return asyncio.run(_fetch())
+        return _loop.run_until_complete(_fetch())
     except Exception as e:
         return {n: f'(error: {e})' for n in pv_names}
 
