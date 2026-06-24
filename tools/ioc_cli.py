@@ -785,10 +785,20 @@ def main():
     settings = load_settings()
     os.environ['EPICS_CA_ADDR_LIST']      = settings['general']['epics_addr_list']
     os.environ['EPICS_CA_AUTO_ADDR_LIST'] = 'NO'
+
+    # Suppress CA library disconnect/connect noise (written at the C fd level)
+    # so it doesn't corrupt the curses display.
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    saved_stderr = os.dup(2)
+    os.dup2(devnull, 2)
+    os.close(devnull)
     try:
         curses.wrapper(tui)
     except KeyboardInterrupt:
         pass
+    finally:
+        os.dup2(saved_stderr, 2)
+        os.close(saved_stderr)
 
 
 if __name__ == '__main__':
