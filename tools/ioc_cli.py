@@ -22,7 +22,8 @@ Keys (main view):
     q / Esc     Quit
 
 Keys (log / PV view):
-    ↑ / ↓       Scroll
+    ↑ / ↓       Scroll / select PV
+    Enter       Set selected PV value (PV views only)
     f           Force refresh (PV view)
     q / Esc     Back to main view
 """
@@ -311,14 +312,16 @@ HELP_LINES = [
         ('l / q / Esc',  'Return to main view'),
     ]),
     ('PV view (single IOC)', [
-        ('↑ / ↓',        'Scroll one line'),
+        ('↑ / ↓',        'Move cursor / scroll'),
+        ('Enter',        'Set selected PV value'),
         ('PgUp / PgDn',  'Scroll one page'),
         ('f',            'Force immediate refresh'),
         ('d',            'Request dbl() from IOC (re-list PVs)'),
         ('q / Esc',       'Return to main view'),
     ]),
     ('All PVs view', [
-        ('↑ / ↓',        'Scroll one line'),
+        ('↑ / ↓',        'Move cursor / scroll (skips IOC headers)'),
+        ('Enter',        'Set selected PV value'),
         ('PgUp / PgDn',  'Scroll one page'),
         ('f',            'Force immediate refresh'),
         ('q / Esc',       'Return to main view'),
@@ -469,6 +472,58 @@ def confirm_popup(stdscr, lines, confirm_label='Enter to confirm', cancel_label=
             return False
 
 
+def input_popup(stdscr, prompt, initial=''):
+    """
+    Centered single-line text-input popup.
+    Returns (confirmed: bool, text: str). Enter confirms, Esc cancels.
+    """
+    h, w  = stdscr.getmaxyx()
+    box_w = min(max(len(prompt) + 6, 50), w - 6)
+    box_h = 5
+    by    = (h - box_h) // 2
+    bx    = (w - box_w) // 2
+
+    popup = curses.newwin(box_h, box_w, by, bx)
+    popup.attron(curses.color_pair(C_SELECTED))
+    popup.box()
+    safe_addstr(popup, 1, 2, prompt[:box_w - 4],
+                curses.color_pair(C_SELECTED) | curses.A_BOLD)
+    hint = ' Enter:confirm   Esc:cancel '
+    safe_addstr(popup, box_h - 2, (box_w - len(hint)) // 2, hint,
+                curses.color_pair(C_HEADER))
+    popup.attroff(curses.color_pair(C_SELECTED))
+
+    curses.curs_set(1)
+    text    = list(initial)
+    field_x = 2
+    field_w = box_w - 4
+
+    while True:
+        visible = ''.join(text)
+        if len(visible) > field_w:
+            visible = visible[len(visible) - field_w:]
+        safe_addstr(popup, 2, field_x, ' ' * field_w)
+        safe_addstr(popup, 2, field_x, visible)
+        try:
+            popup.move(2, field_x + len(visible))
+        except curses.error:
+            pass
+        popup.refresh()
+
+        key = popup.getch()
+        if key in (curses.KEY_ENTER, ord('\n'), ord('\r')):
+            curses.curs_set(0)
+            return True, ''.join(text)
+        elif key == 27:                               # Esc
+            curses.curs_set(0)
+            return False, ''
+        elif key in (curses.KEY_BACKSPACE, 127, 8):
+            if text:
+                text.pop()
+        elif 32 <= key <= 126:
+            text.append(chr(key))
+
+
 # ── Attach helper ──────────────────────────────────────────────────────────────
 def do_attach(stdscr, name):
     """Show confirmation popup, then suspend curses and attach to screen session."""
@@ -529,14 +584,33 @@ def fetch_pv_values(pv_names):
     except Exception as e:
         return {n: f'(error: {e})' for n in pv_names}
 
+def caput_pv(pv_name, value_str):
+    """Write value_str to pv_name via caput. Returns a status string."""
+    async def _put():
+        try:
+            val = int(value_str)
+        except ValueError:
+            try:
+                val = float(value_str)
+            except ValueError:
+                val = value_str
+        await aioca.caput(pv_name, val, timeout=3.0)
+
+    try:
+        _loop.run_until_complete(_put())
+        return f'Set {pv_name} = {value_str}'
+    except Exception as e:
+        return f'caput {pv_name} failed: {e}'
+
 
 # ── PV view ────────────────────────────────────────────────────────────────────
 def pv_view(stdscr, settings, name, prefix):
     """Full-screen view of all PVs for one IOC with live values."""
     curses.curs_set(0)
-    scroll    = 0
-    pv_vals   = {}
-    status    = 'Fetching…'
+    scroll     = 0
+    cursor     = 0
+    pv_vals    = {}
+    status     = 'Fetching…'
     last_fetch = 0.0
 
     lp      = log_path(settings, name)
@@ -545,11 +619,12 @@ def pv_view(stdscr, settings, name, prefix):
     while True:
         now = time.monotonic()
         if now - last_fetch >= REFRESH_SECS:
-            pv_list   = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
-            pv_vals   = fetch_pv_values(pv_list)
+            pv_list    = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
+            pv_vals    = fetch_pv_values(pv_list)
             last_fetch = now
             ts         = time.strftime('%H:%M:%S')
             status     = f'Updated {ts}  ({len(pv_list)} PVs)' if pv_list else 'No PVs found in log'
+            cursor     = min(cursor, max(0, len(pv_list) - 1))
 
         h, w = stdscr.getmaxyx()
         stdscr.erase()
@@ -573,19 +648,25 @@ def pv_view(stdscr, settings, name, prefix):
             scroll     = min(scroll, max_scroll)
 
             for i, pv in enumerate(pv_list[scroll:scroll + view_rows]):
-                row = i + 2
-                val = pv_vals.get(pv, '…')
+                abs_idx = scroll + i
+                row     = i + 2
+                val     = pv_vals.get(pv, '…')
                 if len(val) > col_val:
                     val = val[:col_val - 3] + '...'
-                # Dim the prefix portion, highlight the suffix
                 pv_display = f'{pv:<{col_pv}}'
-                val_attr = (curses.color_pair(C_STOPPED)
-                            if 'disconnected' in val or 'error' in val
-                            else curses.color_pair(C_RUNNING))
-                safe_addstr(stdscr, row, 1, pv_display)
-                safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                if abs_idx == cursor:
+                    fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                    safe_addstr(stdscr, row, 1,
+                                (pv_display + val)[:w - 2],
+                                curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                else:
+                    val_attr = (curses.color_pair(C_STOPPED)
+                                if 'disconnected' in val or 'error' in val
+                                else curses.color_pair(C_RUNNING))
+                    safe_addstr(stdscr, row, 1, pv_display)
+                    safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
 
-        draw_help(stdscr, [('↑↓','scroll'),('f','refresh'),('d','request dbl()'),('q/Esc','back')])
+        draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('f','refresh'),('d','dbl()'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
         stdscr.refresh()
 
@@ -595,7 +676,7 @@ def pv_view(stdscr, settings, name, prefix):
         if key in (ord('q'), 27):
             return
         elif key == ord('f'):
-            last_fetch = 0.0          # force immediate refresh on next loop
+            last_fetch = 0.0
         elif key == ord('d'):
             if ioc_running(name):
                 Screen(name).send_commands('dbl()')
@@ -604,14 +685,28 @@ def pv_view(stdscr, settings, name, prefix):
                 last_fetch = 0.0
             else:
                 status = f'{name} is not running'
-        elif key == curses.KEY_UP:
-            scroll = max(0, scroll - 1)
-        elif key == curses.KEY_DOWN:
-            scroll = min(max(0, len(pv_list) - (h - 4)), scroll + 1)
-        elif key == curses.KEY_PPAGE:
-            scroll = max(0, scroll - (h - 4))
-        elif key == curses.KEY_NPAGE:
-            scroll = min(max(0, len(pv_list) - (h - 4)), scroll + (h - 4))
+        elif key == curses.KEY_UP and pv_list:
+            cursor = max(0, cursor - 1)
+            scroll = min(scroll, cursor)
+        elif key == curses.KEY_DOWN and pv_list:
+            cursor = min(len(pv_list) - 1, cursor + 1)
+            scroll = max(scroll, cursor - (h - 5))
+        elif key == curses.KEY_PPAGE and pv_list:
+            cursor = max(0, cursor - (h - 4))
+            scroll = min(scroll, cursor)
+        elif key == curses.KEY_NPAGE and pv_list:
+            cursor = min(len(pv_list) - 1, cursor + (h - 4))
+            scroll = max(scroll, cursor - (h - 5))
+        elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')) and pv_list:
+            pv      = pv_list[cursor]
+            current = pv_vals.get(pv, '')
+            if 'disconnected' in current or 'error' in current:
+                current = ''
+            confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
+            stdscr.clear()
+            if confirmed and new_val != '':
+                status = caput_pv(pv, new_val)
+                last_fetch = 0.0
 
 
 # ── All-IOCs PV view ──────────────────────────────────────────────────────────
@@ -619,10 +714,18 @@ def all_pvs_view(stdscr, settings, names, prefix):
     """Full-screen view of PVs from all currently running IOCs, grouped by IOC."""
     curses.curs_set(0)
     scroll     = 0
+    cursor     = 0
     status     = 'Fetching…'
     last_fetch = 0.0
     entries    = []   # list of ('header', ioc_name) | ('pv', ioc_name, pv_name)
     pv_vals    = {}
+
+    def _move_cursor(entries, current, direction):
+        """Move cursor in direction (+1/-1), skipping header rows."""
+        i = current + direction
+        while 0 <= i < len(entries) and entries[i][0] == 'header':
+            i += direction
+        return i if 0 <= i < len(entries) else current
 
     while True:
         now = time.monotonic()
@@ -648,6 +751,10 @@ def all_pvs_view(stdscr, settings, names, prefix):
             ts     = time.strftime('%H:%M:%S')
             status = (f'Updated {ts}  ({len(running)} IOCs, {len(all_pvs)} PVs)'
                       if running else 'No running IOCs found')
+            # Keep cursor on a valid pv row after refresh
+            cursor = min(cursor, max(0, len(entries) - 1))
+            if entries and entries[cursor][0] == 'header':
+                cursor = _move_cursor(entries, cursor, 1)
 
         h, w = stdscr.getmaxyx()
         stdscr.erase()
@@ -671,7 +778,8 @@ def all_pvs_view(stdscr, settings, names, prefix):
             scroll     = min(scroll, max_scroll)
 
             for i, entry in enumerate(entries[scroll:scroll + view_rows]):
-                row = i + 2
+                abs_idx = scroll + i
+                row     = i + 2
                 if entry[0] == 'header':
                     label = f'  [{entry[1]}]'
                     fill_row(stdscr, row, curses.color_pair(C_DIM))
@@ -682,13 +790,19 @@ def all_pvs_view(stdscr, settings, names, prefix):
                     val = pv_vals.get(pv, '…')
                     if len(val) > col_val:
                         val = val[:col_val - 3] + '...'
-                    val_attr = (curses.color_pair(C_STOPPED)
-                                if 'disconnected' in val or 'error' in val
-                                else curses.color_pair(C_RUNNING))
-                    safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}')
-                    safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                    if abs_idx == cursor:
+                        fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                        safe_addstr(stdscr, row, 1,
+                                    (f'{pv:<{col_pv}}' + val)[:w - 2],
+                                    curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                    else:
+                        val_attr = (curses.color_pair(C_STOPPED)
+                                    if 'disconnected' in val or 'error' in val
+                                    else curses.color_pair(C_RUNNING))
+                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}')
+                        safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
 
-        draw_help(stdscr, [('↑↓','scroll'),('PgUp/Dn','page'),('f','refresh'),('q/Esc','back')])
+        draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('PgUp/Dn','page'),('f','refresh'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
         stdscr.refresh()
 
@@ -699,14 +813,33 @@ def all_pvs_view(stdscr, settings, names, prefix):
             return
         elif key == ord('f'):
             last_fetch = 0.0
-        elif key == curses.KEY_UP:
-            scroll = max(0, scroll - 1)
-        elif key == curses.KEY_DOWN:
-            scroll = min(max(0, len(entries) - (h - 4)), scroll + 1)
-        elif key == curses.KEY_PPAGE:
-            scroll = max(0, scroll - (h - 4))
-        elif key == curses.KEY_NPAGE:
-            scroll = min(max(0, len(entries) - (h - 4)), scroll + (h - 4))
+        elif key == curses.KEY_UP and entries:
+            cursor = _move_cursor(entries, cursor, -1)
+            scroll = min(scroll, cursor)
+        elif key == curses.KEY_DOWN and entries:
+            cursor = _move_cursor(entries, cursor, 1)
+            scroll = max(scroll, cursor - (h - 5))
+        elif key == curses.KEY_PPAGE and entries:
+            cursor = max(0, cursor - (h - 4))
+            if entries[cursor][0] == 'header':
+                cursor = _move_cursor(entries, cursor, 1)
+            scroll = min(scroll, cursor)
+        elif key == curses.KEY_NPAGE and entries:
+            cursor = min(len(entries) - 1, cursor + (h - 4))
+            if entries[cursor][0] == 'header':
+                cursor = _move_cursor(entries, cursor, -1)
+            scroll = max(scroll, cursor - (h - 5))
+        elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')) and entries:
+            if 0 <= cursor < len(entries) and entries[cursor][0] == 'pv':
+                _, _, pv = entries[cursor]
+                current  = pv_vals.get(pv, '')
+                if 'disconnected' in current or 'error' in current:
+                    current = ''
+                confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
+                stdscr.clear()
+                if confirmed and new_val != '':
+                    status = caput_pv(pv, new_val)
+                    last_fetch = 0.0
 
 
 # ── Main TUI loop ──────────────────────────────────────────────────────────────
