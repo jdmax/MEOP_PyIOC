@@ -584,6 +584,44 @@ def fetch_pv_values(pv_names):
     except Exception as e:
         return {n: f'(error: {e})' for n in pv_names}
 
+# Record types where external CA writes are meaningful (output/setpoint records).
+# Input records (ai, bi, longin, etc.) are treated as read-only: the IOC
+# continuously overwrites their value, so a manual caput is pointless or harmful.
+_WRITABLE_RTYPES = frozenset({
+    'ao', 'bo', 'longout', 'mbbo', 'mbboDirect', 'stringout',
+    'calcout', 'waveform', 'asyn',
+})
+
+_rtyp_cache: dict = {}   # {pv_name: str|None}  — None means unknown (treat as writable)
+
+def fetch_missing_rtypes(pv_names):
+    """Fetch and cache .RTYP for any pv_names not already in _rtyp_cache."""
+    needed = [p for p in pv_names if p not in _rtyp_cache]
+    if not needed:
+        return
+
+    async def _get():
+        results = await aioca.caget(
+            [p + '.RTYP' for p in needed], timeout=2.0, throw=False
+        )
+        for name, val in zip(needed, results):
+            if isinstance(val, aioca.CANothing):
+                _rtyp_cache[name] = None
+            else:
+                _rtyp_cache[name] = str(val).strip()
+
+    try:
+        _loop.run_until_complete(_get())
+    except Exception:
+        for name in needed:
+            _rtyp_cache[name] = None
+
+def is_pv_writable(pv_name):
+    """Return True if the PV's record type suggests it accepts external writes."""
+    rtyp = _rtyp_cache.get(pv_name)
+    return rtyp is None or rtyp in _WRITABLE_RTYPES
+
+
 def caput_pv(pv_name, value_str):
     """Write value_str to pv_name via caput. Returns a status string."""
     async def _put():
@@ -621,6 +659,7 @@ def pv_view(stdscr, settings, name, prefix):
         if now - last_fetch >= REFRESH_SECS:
             pv_list    = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
             pv_vals    = fetch_pv_values(pv_list)
+            fetch_missing_rtypes(pv_list)
             last_fetch = now
             ts         = time.strftime('%H:%M:%S')
             status     = f'Updated {ts}  ({len(pv_list)} PVs)' if pv_list else 'No PVs found in log'
@@ -648,9 +687,10 @@ def pv_view(stdscr, settings, name, prefix):
             scroll     = min(scroll, max_scroll)
 
             for i, pv in enumerate(pv_list[scroll:scroll + view_rows]):
-                abs_idx = scroll + i
-                row     = i + 2
-                val     = pv_vals.get(pv, '…')
+                abs_idx   = scroll + i
+                row       = i + 2
+                writable  = is_pv_writable(pv)
+                val       = pv_vals.get(pv, '…')
                 if len(val) > col_val:
                     val = val[:col_val - 3] + '...'
                 pv_display = f'{pv:<{col_pv}}'
@@ -659,6 +699,10 @@ def pv_view(stdscr, settings, name, prefix):
                     safe_addstr(stdscr, row, 1,
                                 (pv_display + val)[:w - 2],
                                 curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                elif not writable:
+                    safe_addstr(stdscr, row, 1, pv_display,
+                                curses.color_pair(C_DIM))
+                    safe_addstr(stdscr, row, 1 + col_pv, val)
                 else:
                     val_attr = (curses.color_pair(C_STOPPED)
                                 if 'disconnected' in val or 'error' in val
@@ -698,15 +742,19 @@ def pv_view(stdscr, settings, name, prefix):
             cursor = min(len(pv_list) - 1, cursor + (h - 4))
             scroll = max(scroll, cursor - (h - 5))
         elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')) and pv_list:
-            pv      = pv_list[cursor]
-            current = pv_vals.get(pv, '')
-            if 'disconnected' in current or 'error' in current:
-                current = ''
-            confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
-            stdscr.clear()
-            if confirmed and new_val != '':
-                status = caput_pv(pv, new_val)
-                last_fetch = 0.0
+            pv = pv_list[cursor]
+            if not is_pv_writable(pv):
+                rtyp   = _rtyp_cache.get(pv) or 'input'
+                status = f'{pv} is read-only ({rtyp} record)'
+            else:
+                current = pv_vals.get(pv, '')
+                if 'disconnected' in current or 'error' in current:
+                    current = ''
+                confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
+                stdscr.clear()
+                if confirmed and new_val != '':
+                    status = caput_pv(pv, new_val)
+                    last_fetch = 0.0
 
 
 # ── All-IOCs PV view ──────────────────────────────────────────────────────────
@@ -740,6 +788,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
                 all_pvs.extend(pvs)
 
             pv_vals = fetch_pv_values(all_pvs)
+            fetch_missing_rtypes(all_pvs)
 
             entries = []
             for n in running:
@@ -787,6 +836,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
                                 curses.color_pair(C_DIM) | curses.A_BOLD)
                 else:
                     _, _, pv = entry
+                    writable  = is_pv_writable(pv)
                     val = pv_vals.get(pv, '…')
                     if len(val) > col_val:
                         val = val[:col_val - 3] + '...'
@@ -795,6 +845,10 @@ def all_pvs_view(stdscr, settings, names, prefix):
                         safe_addstr(stdscr, row, 1,
                                     (f'{pv:<{col_pv}}' + val)[:w - 2],
                                     curses.color_pair(C_SELECTED) | curses.A_BOLD)
+                    elif not writable:
+                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}',
+                                    curses.color_pair(C_DIM))
+                        safe_addstr(stdscr, row, 1 + col_pv, val)
                     else:
                         val_attr = (curses.color_pair(C_STOPPED)
                                     if 'disconnected' in val or 'error' in val
@@ -832,14 +886,18 @@ def all_pvs_view(stdscr, settings, names, prefix):
         elif key in (curses.KEY_ENTER, ord('\n'), ord('\r')) and entries:
             if 0 <= cursor < len(entries) and entries[cursor][0] == 'pv':
                 _, _, pv = entries[cursor]
-                current  = pv_vals.get(pv, '')
-                if 'disconnected' in current or 'error' in current:
-                    current = ''
-                confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
-                stdscr.clear()
-                if confirmed and new_val != '':
-                    status = caput_pv(pv, new_val)
-                    last_fetch = 0.0
+                if not is_pv_writable(pv):
+                    rtyp   = _rtyp_cache.get(pv) or 'input'
+                    status = f'{pv} is read-only ({rtyp} record)'
+                else:
+                    current = pv_vals.get(pv, '')
+                    if 'disconnected' in current or 'error' in current:
+                        current = ''
+                    confirmed, new_val = input_popup(stdscr, f'Set {pv}', current)
+                    stdscr.clear()
+                    if confirmed and new_val != '':
+                        status = caput_pv(pv, new_val)
+                        last_fetch = 0.0
 
 
 # ── Main TUI loop ──────────────────────────────────────────────────────────────
