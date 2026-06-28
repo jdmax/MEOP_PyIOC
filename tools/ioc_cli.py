@@ -700,9 +700,8 @@ def pv_view(stdscr, settings, name, prefix):
                                 (pv_display + val)[:w - 2],
                                 curses.color_pair(C_SELECTED) | curses.A_BOLD)
                 elif not writable:
-                    safe_addstr(stdscr, row, 1, pv_display,
-                                curses.color_pair(C_DIM))
-                    safe_addstr(stdscr, row, 1 + col_pv, val)
+                    safe_addstr(stdscr, row, 1, pv_display, curses.A_DIM)
+                    safe_addstr(stdscr, row, 1 + col_pv, val, curses.A_DIM)
                 else:
                     val_attr = (curses.color_pair(C_STOPPED)
                                 if 'disconnected' in val or 'error' in val
@@ -830,10 +829,10 @@ def all_pvs_view(stdscr, settings, names, prefix):
                 abs_idx = scroll + i
                 row     = i + 2
                 if entry[0] == 'header':
-                    label = f'  [{entry[1]}]'
-                    fill_row(stdscr, row, curses.color_pair(C_DIM))
+                    label = f'  {entry[1]} '
+                    fill_row(stdscr, row, curses.color_pair(C_TITLE) | curses.A_BOLD)
                     safe_addstr(stdscr, row, 1, label[:w - 2],
-                                curses.color_pair(C_DIM) | curses.A_BOLD)
+                                curses.color_pair(C_TITLE) | curses.A_BOLD)
                 else:
                     _, _, pv = entry
                     writable  = is_pv_writable(pv)
@@ -847,8 +846,9 @@ def all_pvs_view(stdscr, settings, names, prefix):
                                     curses.color_pair(C_SELECTED) | curses.A_BOLD)
                     elif not writable:
                         safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}',
-                                    curses.color_pair(C_DIM))
-                        safe_addstr(stdscr, row, 1 + col_pv, val)
+                                    curses.A_DIM)
+                        safe_addstr(stdscr, row, 1 + col_pv, val,
+                                    curses.A_DIM)
                     else:
                         val_attr = (curses.color_pair(C_STOPPED)
                                     if 'disconnected' in val or 'error' in val
