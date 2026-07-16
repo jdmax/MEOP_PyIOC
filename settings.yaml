@@ -656,7 +656,7 @@ hfc300:
 ln2_level_probe:
   module: 'devices.instruments.dat8017_level'
   autostart: False          # TODO: enable once wired/tested
-  ip: '0.0.0.0'             # TODO: set IP
+  ip: '129.57.37.50'            
   port: '502'
   timeout: 2
   delay: 5
