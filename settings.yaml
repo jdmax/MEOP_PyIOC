@@ -653,3 +653,21 @@ hfc300:
       EGU: 'SLM'
       DRVH: 100
       DRVL: 0
+ln2_level_probe:
+  module: 'devices.instruments.dat8017_level'
+  autostart: False          # TODO: enable once wired/tested
+  ip: '0.0.0.0'             # TODO: set IP
+  port: '502'
+  timeout: 2
+  delay: 5
+  threshold: 10.0           # mA; below = wet (immersed), above = dry (vapor)
+  channels: # 4 PV names in probe order, bottom to top; map to physical channels 0,2,4,6
+    - LN2_Level_1
+    - LN2_Level_2
+    - LN2_Level_3
+    - LN2_Level_4
+  records:
+    Level_Percent:
+      DESC: 'LN2 Probe Level'
+      PREC: 0
+      EGU: '%'
