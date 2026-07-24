@@ -661,11 +661,11 @@ ln2_level_probe:
   timeout: 2
   delay: 5
   threshold: 10.0           # mA; below = wet (immersed), above = dry (vapor)
-  channels: # 4 PV names in probe order, bottom to top; map to physical channels 0,2,4,6
-    - LN2_Bot
-    - LN2_MidBot
-    - LN2_MidTop
+  channels: # 4 PV names in probe order, top to bottom; map to physical channels 0,2,4,6
     - LN2_Top
+    - LN2_MidTop
+    - LN2_MidBot
+    - LN2_Bot
   records:
     Level_Percent:
       DESC: 'LN2 Probe Level'
