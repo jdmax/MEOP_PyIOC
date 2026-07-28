@@ -67,9 +67,7 @@ class IOCManager:
                                            ("Reset",'MINOR'),
                                            on_update_name=self.screen_update
                                            )
-            self.pvs[name+'_hb'] = builder.mbbOut(name+'_hb')
-            #setattr(self.pvs[name+'_hb'], 'HIGH', 10)
-            #setattr(self.pvs[name+'_hb'], 'LOW', 1)
+            self.pvs[name+'_hb'] = builder.aOut(name+'_hb')
             self.pvs[name].set(0)
         self.pv_all = builder.mbbOut('all',
                                        ("Stop",'MINOR'),
@@ -175,7 +173,7 @@ class IOCManager:
         try:
             t = await aioca.caget(f"{self.device_name}:{name}_time")
             now = datetime.datetime.now().timestamp()
-            self.pvs[name+'_hb'].set(int(now - float(t)))
+            self.pvs[name+'_hb'].set(now - float(t))
         except aioca.CANothing as e:
             print("Get error:", e, f"{self.device_name}:{name}_time")
 
