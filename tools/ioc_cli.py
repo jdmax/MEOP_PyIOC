@@ -745,7 +745,7 @@ def pv_view(stdscr, settings, name, prefix):
                     ro_attr = curses.color_pair(C_READONLY)
                     safe_addstr(stdscr, row, 1, pv_display, ro_attr)
                     safe_addstr(stdscr, row, 1 + col_pv, val, ro_attr)
-                    safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, ro_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, severity_attr(sev))
                 else:
                     val_attr = (curses.color_pair(C_STOPPED)
                                 if 'disconnected' in val or 'error' in val
@@ -898,7 +898,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
                         ro_attr = curses.color_pair(C_READONLY)
                         safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}', ro_attr)
                         safe_addstr(stdscr, row, 1 + col_pv, val, ro_attr)
-                        safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, ro_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, severity_attr(sev))
                     else:
                         val_attr = (curses.color_pair(C_STOPPED)
                                     if 'disconnected' in val or 'error' in val
