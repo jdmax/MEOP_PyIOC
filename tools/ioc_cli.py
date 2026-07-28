@@ -157,6 +157,7 @@ C_READONLY     = 8
 C_ALARM_MINOR  = 9
 C_ALARM_MAJOR  = 10
 C_ALARM_INVALID = 11
+C_WRITABLE     = 12
 
 def init_colors():
     curses.start_color()
@@ -168,11 +169,10 @@ def init_colors():
     curses.init_pair(C_STATUS,   curses.COLOR_BLACK,  curses.COLOR_YELLOW)
     curses.init_pair(C_TITLE,    curses.COLOR_BLACK,  curses.COLOR_BLUE)
     curses.init_pair(C_DIM,      curses.COLOR_YELLOW, -1)
-    # curses.A_DIM renders as near-black (unreadable) on many terminals.
-    # Bright-black (colour 8) reads as a proper mid-grey when the terminal
-    # supports it; fall back to cyan on 8-colour terminals.
-    readonly_fg = 8 if curses.COLORS >= 16 else curses.COLOR_CYAN
-    curses.init_pair(C_READONLY,      readonly_fg,          -1)
+    # Read-only PVs in plain white, writable PVs in yellow — explicit colours
+    # instead of a dim/grey attribute, which renders too dark on many terminals.
+    curses.init_pair(C_READONLY,      curses.COLOR_WHITE,   -1)
+    curses.init_pair(C_WRITABLE,      curses.COLOR_YELLOW,  -1)
     curses.init_pair(C_ALARM_MINOR,   curses.COLOR_YELLOW,  -1)
     curses.init_pair(C_ALARM_MAJOR,   curses.COLOR_RED,     -1)
     curses.init_pair(C_ALARM_INVALID, curses.COLOR_MAGENTA, -1)
@@ -719,7 +719,7 @@ def pv_view(stdscr, settings, name, prefix):
             # Column header
             fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
             safe_addstr(stdscr, 1, 1,
-                        f'{"PV":<{col_pv}}{"ALARM":<{col_alarm}}{"VALUE":<{col_val}}'[:w - 2],
+                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}{"ALARM":<{col_alarm}}'[:w - 2],
                         curses.color_pair(C_HEADER) | curses.A_BOLD)
 
             view_rows  = h - 4
@@ -739,21 +739,21 @@ def pv_view(stdscr, settings, name, prefix):
                 if abs_idx == cursor:
                     fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
                     safe_addstr(stdscr, row, 1,
-                                (pv_display + alarm_display + val)[:w - 2],
+                                (pv_display + val + alarm_display)[:w - 2],
                                 curses.color_pair(C_SELECTED) | curses.A_BOLD)
                 elif not writable:
                     ro_attr = curses.color_pair(C_READONLY)
                     safe_addstr(stdscr, row, 1, pv_display, ro_attr)
-                    safe_addstr(stdscr, row, 1 + col_pv, alarm_display, ro_attr)
-                    safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, ro_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv, val, ro_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, ro_attr)
                 else:
                     val_attr = (curses.color_pair(C_STOPPED)
                                 if 'disconnected' in val or 'error' in val
                                 else curses.color_pair(C_RUNNING))
                     alarm_attr = severity_attr(sev)
-                    safe_addstr(stdscr, row, 1, pv_display)
-                    safe_addstr(stdscr, row, 1 + col_pv, alarm_display, alarm_attr)
-                    safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, val_attr)
+                    safe_addstr(stdscr, row, 1, pv_display, curses.color_pair(C_WRITABLE))
+                    safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, alarm_attr)
 
         draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('f','refresh'),('d','dbl()'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
@@ -866,7 +866,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
 
             fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
             safe_addstr(stdscr, 1, 1,
-                        f'{"PV":<{col_pv}}{"ALARM":<{col_alarm}}{"VALUE":<{col_val}}'[:w - 2],
+                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}{"ALARM":<{col_alarm}}'[:w - 2],
                         curses.color_pair(C_HEADER) | curses.A_BOLD)
 
             view_rows  = h - 4
@@ -892,21 +892,21 @@ def all_pvs_view(stdscr, settings, names, prefix):
                     if abs_idx == cursor:
                         fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
                         safe_addstr(stdscr, row, 1,
-                                    (f'{pv:<{col_pv}}' + alarm_display + val)[:w - 2],
+                                    (f'{pv:<{col_pv}}' + val + alarm_display)[:w - 2],
                                     curses.color_pair(C_SELECTED) | curses.A_BOLD)
                     elif not writable:
                         ro_attr = curses.color_pair(C_READONLY)
                         safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}', ro_attr)
-                        safe_addstr(stdscr, row, 1 + col_pv, alarm_display, ro_attr)
-                        safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, ro_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv, val, ro_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, ro_attr)
                     else:
                         val_attr = (curses.color_pair(C_STOPPED)
                                     if 'disconnected' in val or 'error' in val
                                     else curses.color_pair(C_RUNNING))
                         alarm_attr = severity_attr(sev)
-                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}')
-                        safe_addstr(stdscr, row, 1 + col_pv, alarm_display, alarm_attr)
-                        safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, val_attr)
+                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}', curses.color_pair(C_WRITABLE))
+                        safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv + col_val, alarm_display, alarm_attr)
 
         draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('PgUp/Dn','page'),('f','refresh'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
