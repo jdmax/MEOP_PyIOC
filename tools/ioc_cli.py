@@ -145,14 +145,18 @@ def restart_manager():
 
 
 # ── Colour pair indices ────────────────────────────────────────────────────────
-C_NORMAL   = 0
-C_HEADER   = 1
-C_RUNNING  = 2
-C_STOPPED  = 3
-C_SELECTED = 4
-C_STATUS   = 5
-C_TITLE    = 6
-C_DIM      = 7
+C_NORMAL       = 0
+C_HEADER       = 1
+C_RUNNING      = 2
+C_STOPPED      = 3
+C_SELECTED     = 4
+C_STATUS       = 5
+C_TITLE        = 6
+C_DIM          = 7
+C_READONLY     = 8
+C_ALARM_MINOR  = 9
+C_ALARM_MAJOR  = 10
+C_ALARM_INVALID = 11
 
 def init_colors():
     curses.start_color()
@@ -164,6 +168,30 @@ def init_colors():
     curses.init_pair(C_STATUS,   curses.COLOR_BLACK,  curses.COLOR_YELLOW)
     curses.init_pair(C_TITLE,    curses.COLOR_BLACK,  curses.COLOR_BLUE)
     curses.init_pair(C_DIM,      curses.COLOR_YELLOW, -1)
+    # curses.A_DIM renders as near-black (unreadable) on many terminals.
+    # Bright-black (colour 8) reads as a proper mid-grey when the terminal
+    # supports it; fall back to cyan on 8-colour terminals.
+    readonly_fg = 8 if curses.COLORS >= 16 else curses.COLOR_CYAN
+    curses.init_pair(C_READONLY,      readonly_fg,          -1)
+    curses.init_pair(C_ALARM_MINOR,   curses.COLOR_YELLOW,  -1)
+    curses.init_pair(C_ALARM_MAJOR,   curses.COLOR_RED,     -1)
+    curses.init_pair(C_ALARM_INVALID, curses.COLOR_MAGENTA, -1)
+
+
+# EPICS alarm severity: 0=NO_ALARM, 1=MINOR, 2=MAJOR, 3=INVALID
+_SEVERITY_LABELS = {1: 'MINOR', 2: 'MAJOR', 3: 'INVALID'}
+
+def severity_label(sev):
+    return _SEVERITY_LABELS.get(sev, '')
+
+def severity_attr(sev):
+    if sev == 1:
+        return curses.color_pair(C_ALARM_MINOR) | curses.A_BOLD
+    if sev == 2:
+        return curses.color_pair(C_ALARM_MAJOR) | curses.A_BOLD
+    if sev == 3:
+        return curses.color_pair(C_ALARM_INVALID) | curses.A_BOLD
+    return 0
 
 
 # ── Drawing helpers ────────────────────────────────────────────────────────────
@@ -563,26 +591,36 @@ def pv_names_from_log(path, prefix):
         return []
 
 def fetch_pv_values(pv_names):
-    """Return a dict {pv_name: value_str} using aioca.caget."""
+    """Return ({pv_name: value_str}, {pv_name: severity_int}) using aioca.caget.
+
+    Severity is fetched in the same round trip via FORMAT_TIME (0=NO_ALARM,
+    1=MINOR, 2=MAJOR, 3=INVALID); disconnected/error PVs get severity None.
+    """
     if not pv_names:
-        return {}
+        return {}, {}
 
     async def _fetch():
-        results = await aioca.caget(pv_names, timeout=2.0, throw=False)
-        out = {}
+        results = await aioca.caget(
+            pv_names, format=aioca.FORMAT_TIME, timeout=2.0, throw=False
+        )
+        vals, sevs = {}, {}
         for name, val in zip(pv_names, results):
             if isinstance(val, aioca.CANothing):
-                out[name] = '(disconnected)'
-            elif hasattr(val, '__len__') and not isinstance(val, str):
-                out[name] = str(list(val))
+                vals[name] = '(disconnected)'
+                sevs[name] = None
             else:
-                out[name] = str(val)
-        return out
+                if hasattr(val, '__len__') and not isinstance(val, str):
+                    vals[name] = str(list(val))
+                else:
+                    vals[name] = str(val)
+                sevs[name] = int(getattr(val, 'severity', 0))
+        return vals, sevs
 
     try:
         return _loop.run_until_complete(_fetch())
     except Exception as e:
-        return {n: f'(error: {e})' for n in pv_names}
+        return ({n: f'(error: {e})' for n in pv_names},
+                {n: None for n in pv_names})
 
 # Record types where external CA writes are meaningful (output/setpoint records).
 # Input records (ai, bi, longin, etc.) are treated as read-only: the IOC
@@ -648,6 +686,7 @@ def pv_view(stdscr, settings, name, prefix):
     scroll     = 0
     cursor     = 0
     pv_vals    = {}
+    pv_sevs    = {}
     status     = 'Fetching…'
     last_fetch = 0.0
 
@@ -658,7 +697,7 @@ def pv_view(stdscr, settings, name, prefix):
         now = time.monotonic()
         if now - last_fetch >= REFRESH_SECS:
             pv_list    = [p for p in pv_names_from_log(lp, prefix) if not p.endswith('_time')]
-            pv_vals    = fetch_pv_values(pv_list)
+            pv_vals, pv_sevs = fetch_pv_values(pv_list)
             fetch_missing_rtypes(pv_list)
             last_fetch = now
             ts         = time.strftime('%H:%M:%S')
@@ -673,13 +712,14 @@ def pv_view(stdscr, settings, name, prefix):
             safe_addstr(stdscr, 2, 2, 'No PVs found. Is the IOC running?',
                         curses.color_pair(C_STOPPED))
         else:
-            col_pv  = max(len(p) for p in pv_list) + 2
-            col_val = max(w - col_pv - 4, 10)
+            col_pv    = max(len(p) for p in pv_list) + 2
+            col_alarm = 9
+            col_val   = max(w - col_pv - col_alarm - 4, 10)
 
             # Column header
             fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
             safe_addstr(stdscr, 1, 1,
-                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}'[:w - 2],
+                        f'{"PV":<{col_pv}}{"ALARM":<{col_alarm}}{"VALUE":<{col_val}}'[:w - 2],
                         curses.color_pair(C_HEADER) | curses.A_BOLD)
 
             view_rows  = h - 4
@@ -693,21 +733,27 @@ def pv_view(stdscr, settings, name, prefix):
                 val       = pv_vals.get(pv, '…')
                 if len(val) > col_val:
                     val = val[:col_val - 3] + '...'
-                pv_display = f'{pv:<{col_pv}}'
+                sev           = pv_sevs.get(pv)
+                alarm_display = f'{severity_label(sev):<{col_alarm}}'
+                pv_display    = f'{pv:<{col_pv}}'
                 if abs_idx == cursor:
                     fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
                     safe_addstr(stdscr, row, 1,
-                                (pv_display + val)[:w - 2],
+                                (pv_display + alarm_display + val)[:w - 2],
                                 curses.color_pair(C_SELECTED) | curses.A_BOLD)
                 elif not writable:
-                    safe_addstr(stdscr, row, 1, pv_display, curses.A_DIM)
-                    safe_addstr(stdscr, row, 1 + col_pv, val, curses.A_DIM)
+                    ro_attr = curses.color_pair(C_READONLY)
+                    safe_addstr(stdscr, row, 1, pv_display, ro_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv, alarm_display, ro_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, ro_attr)
                 else:
                     val_attr = (curses.color_pair(C_STOPPED)
                                 if 'disconnected' in val or 'error' in val
                                 else curses.color_pair(C_RUNNING))
+                    alarm_attr = severity_attr(sev)
                     safe_addstr(stdscr, row, 1, pv_display)
-                    safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv, alarm_display, alarm_attr)
+                    safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, val_attr)
 
         draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('f','refresh'),('d','dbl()'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
@@ -766,6 +812,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
     last_fetch = 0.0
     entries    = []   # list of ('header', ioc_name) | ('pv', ioc_name, pv_name)
     pv_vals    = {}
+    pv_sevs    = {}
 
     def _move_cursor(entries, current, direction):
         """Move cursor in direction (+1/-1), skipping header rows."""
@@ -786,7 +833,7 @@ def all_pvs_view(stdscr, settings, names, prefix):
                 ioc_pv_map[n] = pvs
                 all_pvs.extend(pvs)
 
-            pv_vals = fetch_pv_values(all_pvs)
+            pv_vals, pv_sevs = fetch_pv_values(all_pvs)
             fetch_missing_rtypes(all_pvs)
 
             entries = []
@@ -813,12 +860,13 @@ def all_pvs_view(stdscr, settings, names, prefix):
                         curses.color_pair(C_STOPPED))
         else:
             pv_names_only = [e[2] for e in entries if e[0] == 'pv']
-            col_pv  = (max(len(p) for p in pv_names_only) + 2) if pv_names_only else 30
-            col_val = max(w - col_pv - 4, 10)
+            col_pv    = (max(len(p) for p in pv_names_only) + 2) if pv_names_only else 30
+            col_alarm = 9
+            col_val   = max(w - col_pv - col_alarm - 4, 10)
 
             fill_row(stdscr, 1, curses.color_pair(C_HEADER) | curses.A_BOLD)
             safe_addstr(stdscr, 1, 1,
-                        f'{"PV":<{col_pv}}{"VALUE":<{col_val}}'[:w - 2],
+                        f'{"PV":<{col_pv}}{"ALARM":<{col_alarm}}{"VALUE":<{col_val}}'[:w - 2],
                         curses.color_pair(C_HEADER) | curses.A_BOLD)
 
             view_rows  = h - 4
@@ -839,22 +887,26 @@ def all_pvs_view(stdscr, settings, names, prefix):
                     val = pv_vals.get(pv, '…')
                     if len(val) > col_val:
                         val = val[:col_val - 3] + '...'
+                    sev           = pv_sevs.get(pv)
+                    alarm_display = f'{severity_label(sev):<{col_alarm}}'
                     if abs_idx == cursor:
                         fill_row(stdscr, row, curses.color_pair(C_SELECTED) | curses.A_BOLD)
                         safe_addstr(stdscr, row, 1,
-                                    (f'{pv:<{col_pv}}' + val)[:w - 2],
+                                    (f'{pv:<{col_pv}}' + alarm_display + val)[:w - 2],
                                     curses.color_pair(C_SELECTED) | curses.A_BOLD)
                     elif not writable:
-                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}',
-                                    curses.A_DIM)
-                        safe_addstr(stdscr, row, 1 + col_pv, val,
-                                    curses.A_DIM)
+                        ro_attr = curses.color_pair(C_READONLY)
+                        safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}', ro_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv, alarm_display, ro_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, ro_attr)
                     else:
                         val_attr = (curses.color_pair(C_STOPPED)
                                     if 'disconnected' in val or 'error' in val
                                     else curses.color_pair(C_RUNNING))
+                        alarm_attr = severity_attr(sev)
                         safe_addstr(stdscr, row, 1, f'{pv:<{col_pv}}')
-                        safe_addstr(stdscr, row, 1 + col_pv, val, val_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv, alarm_display, alarm_attr)
+                        safe_addstr(stdscr, row, 1 + col_pv + col_alarm, val, val_attr)
 
         draw_help(stdscr, [('↑↓','select'),('Enter','set value'),('PgUp/Dn','page'),('f','refresh'),('q/Esc','back')])
         draw_status(stdscr, f'  {status}')
