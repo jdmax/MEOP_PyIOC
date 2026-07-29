@@ -535,6 +535,66 @@ pid_temp:
       EGU: 'K'
       DRVH: 300
       DRVL: 2
+# ----------------------------------------------------------------------------
+# EXAMPLE: self-contained PID (pid.py) + general-purpose feed-forward
+# (feedforward.py). Both are commented out; uncomment and adjust PVs to use.
+# The feed-forward IOC publishes FF_Heater_CV, which the PID reads via
+# feedforward_pv and sums into its output (absorbed bumplessly in Manual).
+# ----------------------------------------------------------------------------
+#pid_temp_v2:
+#  module: 'devices.instruments.pid'    # self-contained PID (no simple_pid dep)
+#  autostart: True
+#  delay: 1                             # update rate in seconds
+#  input_pv: 'TGT:MEOP:Test_TI'         # read process value from this PV
+#  output_pv: 'TGT:MEOP:Test_Heater_CI' # write control output to this PV
+#  feedforward_pv: 'TGT:MEOP:FF_Heater_CV'  # optional: read feed-forward from this PV
+#  outs:
+#    kp: 2.0
+#    ki: 0.5
+#    kd: 0.1
+#    setpoint: 4.5                      # initial setpoint in K
+#    min_output: 0
+#    max_output: 100
+#    kaw: 1.0                           # anti-windup back-calculation gain
+#    feedforward: 0.0                   # optional constant feed-forward term
+#    auto_start: False                  # start in Manual mode
+#  channels:                            # for PID, just list one channel
+#    - PID_Temp_V2
+#  records:
+#    PID_Temp_V2_SP:
+#      DESC: 'Temperature Setpoint'
+#      PREC: 3
+#      EGU: 'K'
+#      DRVH: 300
+#      DRVL: 2
+#
+#ff_heater:
+#  module: 'devices.instruments.feedforward'
+#  autostart: True
+#  delay: 1
+#  egu: '%'                             # units for the output PV
+#  prec: 3
+#  #output_pv: 'TGT:MEOP:Some_Actuator' # optional: caput result directly (standalone use)
+#  sources:                             # each source: read PV, transform, then summed
+#    - pv: 'TGT:MEOP:PID_Temp_V2_SP'    # model-based FF from the setpoint
+#      type: 'poly'                     # y = c0 + c1*x + c2*x^2 (coeffs ascending)
+#      coeffs: [0.0, 0.5, 0.01]
+#      desc: 'setpoint feed-forward'
+#    - pv: 'TGT:MEOP:OVC_TI'            # disturbance FF from a measured temperature
+#      type: 'lookup'                   # piecewise-linear over (x, y) breakpoints
+#      table: [[4.0, 10.0], [10.0, 25.0], [20.0, 60.0]]
+#    #- pv: 'TGT:MEOP:Some_Flow'        # simple gain/offset example
+#    #  type: 'linear'                  # y = gain*x + offset
+#    #  gain: 2.0
+#    #  offset: 1.0
+#  outs:
+#    scale: 1.0                         # overall multiplier on summed sources
+#    bias: 0.0                          # constant added after scaling
+#    min_output: 0                      # output clamp low  (omit for none)
+#    max_output: 100                    # output clamp high (omit for none)
+#    enable: True                       # start enabled? (Off forces output to 0)
+#  channels:                            # single channel; output PV is {channel}_CV
+#    - FF_Heater
 bga244:
   module: 'devices.instruments.bga244'
   autostart: True
