@@ -1,4 +1,4 @@
-﻿# IOC device settings, YAML
+# IOC device settings, YAML
 # With exception of 'general', each top level key defines a new ioc for that device
 general:
   prefix: TGT:MEOP
