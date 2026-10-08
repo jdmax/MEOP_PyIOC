@@ -444,7 +444,7 @@ dat8024:
   delay: 5
   channels: # List of channel names in order. None indicates unused channel.
     - WaveTune_VC
-    - Current_VC
+    - PumpCurrent_VC
     - None
     - None
   records:
