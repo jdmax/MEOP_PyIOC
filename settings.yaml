@@ -458,8 +458,8 @@ dat8024:
       HIGH: 5.5
       LOW: -1
       LOLO: -2
-    Current_VC:
-      DESC: 'Current Control'
+    PumpCurrent_VC:
+      DESC: 'Pump Laser Current Control'
       PREC: 3
       EGU: 'V'
       DRVH: 5
