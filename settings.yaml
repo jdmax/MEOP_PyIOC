@@ -443,8 +443,8 @@ dat8024:
   timeout: 2
   delay: 5
   channels: # List of channel names in order. None indicates unused channel.
-    - Voltage1_VC
-    - None
+    - WaveTune_VC
+    - Current_VC
     - None
     - None
   records:
