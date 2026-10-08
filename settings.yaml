@@ -741,3 +741,62 @@ ln2_level_probe:
       DESC: 'LN2 Probe Level'
       PREC: 0
       EGU: '%'
+azurlight_mon:
+  module: 'devices.instruments.dat8017_azurlight'
+  autostart: False          # TODO: enable once wired/tested
+  ip: '129.57.37.114'             # TODO: set IP of DAT8017-V
+  port: '502'
+  timeout: 2
+  delay: 2
+  mv_per_count: 1.0         # DAT8017-V register units in mV
+  channels: # DAT8017-V inputs 0-7 = Azurlight DB9 pins 1,2,3,4,6,7,8,9 (pin 5 COMMON -> input common)
+    - Laser_Amp_I           # pin 1 ImonA
+    - Laser_Power           # pin 2 Pmon
+    - Laser_Amp_ILim        # pin 3 Lmon
+    - Laser_Pump_T          # pin 4 Tact-P
+    - Laser_PreAmp_I        # pin 6 ImonPA
+    - Laser_Pump_TSP        # pin 7 Tset-P
+    - Laser_Head_TSP        # pin 8 Tset-H
+    - Laser_Head_T          # pin 9 Tact-H
+  calibration: # 'current' V*5, 'limit' (V-0.13)*5, 'temp' NTC, number = W/V, [a, b] = V*a+b
+    Laser_Amp_I: current
+    Laser_Power: 2.0        # TODO: W/V from laser test report
+    Laser_Amp_ILim: limit
+    Laser_Pump_T: temp
+    Laser_PreAmp_I: current
+    Laser_Pump_TSP: temp
+    Laser_Head_TSP: temp
+    Laser_Head_T: temp
+  records:
+    Laser_Amp_I:
+      DESC: 'Amp Pump Diode Current'
+      PREC: 2
+      EGU: 'A'
+    Laser_Power:
+      DESC: 'Laser Head Output Power'
+      PREC: 2
+      EGU: 'W'
+    Laser_Amp_ILim:
+      DESC: 'Amp Pump Diode Current Limit'
+      PREC: 2
+      EGU: 'A'
+    Laser_Pump_T:
+      DESC: 'Amp Pump Diode Temperature'
+      PREC: 1
+      EGU: 'C'
+    Laser_PreAmp_I:
+      DESC: 'Pre-Amp Pump Diode Current'
+      PREC: 2
+      EGU: 'A'
+    Laser_Pump_TSP:
+      DESC: 'Amp Pump Diode Temp Setpoint'
+      PREC: 1
+      EGU: 'C'
+    Laser_Head_TSP:
+      DESC: 'Laser Head Temp Setpoint'
+      PREC: 1
+      EGU: 'C'
+    Laser_Head_T:
+      DESC: 'Laser Head Temperature'
+      PREC: 1
+      EGU: 'C'
