@@ -749,6 +749,7 @@ azurlight_mon:
   timeout: 2
   delay: 2
   mv_per_count: 1.0         # DAT8017-V register units in mV
+  on_threshold: 0.5         # V on Lmon; above = laser on (~2.1 V on, <0.2 V off)
   channels: # DAT8017-V inputs 0-7 = Azurlight DB9 pins 1,2,3,4,6,7,8,9 (pin 5 COMMON -> input common)
     - Laser_Amp_I           # pin 1 ImonA
     - Laser_Power           # pin 2 Pmon
@@ -767,36 +768,70 @@ azurlight_mon:
     Laser_Pump_TSP: temp
     Laser_Head_TSP: temp
     Laser_Head_T: temp
-  records:
+  records: # TODO: tune alarm limits to your operating point; LOW/LOLO below 0 so laser-off zeros don't alarm
+    Laser_On:
+      DESC: 'Pump Laser On/Off'
     Laser_Amp_I:
       DESC: 'Amp Pump Diode Current'
       PREC: 2
       EGU: 'A'
+      HIHI: 9.5
+      HIGH: 8.0
+      LOW: -1
+      LOLO: -2
     Laser_Power:
       DESC: 'Laser Head Output Power'
       PREC: 2
       EGU: 'W'
+      HIHI: 15
+      HIGH: 12
+      LOW: -1
+      LOLO: -2
     Laser_Amp_ILim:
       DESC: 'Amp Pump Diode Current Limit'
       PREC: 2
       EGU: 'A'
+      HIHI: 100
+      HIGH: 100
+      LOW: -1
+      LOLO: -2
     Laser_Pump_T:
       DESC: 'Amp Pump Diode Temperature'
       PREC: 1
       EGU: 'C'
+      HIHI: 35
+      HIGH: 32
+      LOW: 20
+      LOLO: 15
     Laser_PreAmp_I:
       DESC: 'Pre-Amp Pump Diode Current'
       PREC: 2
       EGU: 'A'
+      HIHI: 5
+      HIGH: 4
+      LOW: -1
+      LOLO: -2
     Laser_Pump_TSP:
       DESC: 'Amp Pump Diode Temp Setpoint'
       PREC: 1
       EGU: 'C'
+      HIHI: 35
+      HIGH: 32
+      LOW: 20
+      LOLO: 15
     Laser_Head_TSP:
       DESC: 'Laser Head Temp Setpoint'
       PREC: 1
       EGU: 'C'
+      HIHI: 65
+      HIGH: 60
+      LOW: 15
+      LOLO: 10
     Laser_Head_T:
       DESC: 'Laser Head Temperature'
       PREC: 1
       EGU: 'C'
+      HIHI: 65
+      HIGH: 60
+      LOW: 15
+      LOLO: 10
