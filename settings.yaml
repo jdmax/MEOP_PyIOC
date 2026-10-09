@@ -760,7 +760,7 @@ azurlight_mon:
     - Laser_Head_T          # pin 9 Tact-H
   calibration: # 'current' V*5, 'limit' (V-0.13)*5, 'temp' NTC, number = W/V, [a, b] = V*a+b
     Laser_Amp_I: current
-    Laser_Power: 2.0        # TODO: W/V from laser test report
+    Laser_Power: 5.49       # W/V, one-point cal: 0.638 V = 3.5 W (front panel)
     Laser_Amp_ILim: limit
     Laser_Pump_T: temp
     Laser_PreAmp_I: current
