@@ -445,8 +445,8 @@ dat8024:
   channels: # List of channel names in order. None indicates unused channel.
     - WaveTune_VC
     - PumpCurrent_VC
-    - None
-    - None
+    - PumpControl_VC
+    - Shutter_VC
   records:
     WaveTune_VC:
       DESC: 'Wavelength Tune Voltage'
@@ -466,6 +466,26 @@ dat8024:
       DRVL: 0
       HIHI: 5.1
       HIGH: 5.0
+      LOW: -1
+      LOLO: -2
+    PumpControl_VC:
+      DESC: 'Pump Laser Status Control'
+      PREC: 2
+      EGU: 'V'
+      DRVH: 5.01
+      DRVL: 0
+      HIHI: 5.1
+      HIGH: 5.01
+      LOW: -1
+      LOLO: -2
+    Shutter_VC:
+      DESC: 'Shutter Control'
+      PREC: 2
+      EGU: 'V'
+      DRVH: 5.01
+      DRVL: 0
+      HIHI: 5.1
+      HIGH: 5.01
       LOW: -1
       LOLO: -2
 dat8017_i:
@@ -490,7 +510,7 @@ dat8017_i:
       HIGH: 2500
       LOW: 50
       LOLO: 10
-    Absorb_PI:
+    Absorb_CI:
       DESC: 'Pump Laser Absorption'
       PREC: 3
       EGU: 'mA'
