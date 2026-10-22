@@ -462,7 +462,7 @@ dat8024:
       DESC: 'Pump Laser Current Control'
       PREC: 3
       EGU: 'V'
-      DRVH: 5
+      DRVH: 5.01
       DRVL: 0
       HIHI: 5.1
       HIGH: 5.0
