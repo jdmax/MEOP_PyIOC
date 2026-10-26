@@ -132,7 +132,7 @@ class IOCManager:
         name = pv_name.replace('_control', '')  # remove suffix from pv name to name screen
         if Screen(name).exists:
             subprocess.run(["screen","-XS",name,"kill"])
-            self.pvs[name].set(0)
+            self.pvs[name].set(0, process=False)
         if name in self.screens:
             del self.screens[name]
 
@@ -207,7 +207,7 @@ class StartThread(Thread):
                         if match:
                             pvs.append(match.group(1))
                 self.parent.ioc_pvs[self.name] = pvs   # send the list of pvs back to manager
-                self.parent.pvs[self.name].set(1)
+                self.parent.pvs[self.name].set(1, process=False)
                 break
             time.sleep(1)
             elapsed += 1

@@ -1,4 +1,4 @@
-softioc~=4.6.1
+softioc~=4.7.2
 pyModbusTCP~=0.3.0
 psutil~=7.2.1
 aioca~=1.8.1
